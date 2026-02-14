@@ -1,0 +1,60 @@
+2D platformer game, Gold Duck:
+
+Characters:
+Gold Duck (Goldey): A gold duck that needs to bathe in gold to keep his gold colour and shine.
+Cassey: A blonde femme fatale who is also after the fat thief. Pony tail, blue eyes, catsuit.
+Fat thief (name): Notorious town thief that robs and leaves notes behind after he robs about the next location he will rob. Fat, goatee, bold, black shades, white vest, blue
+				  jeans, gold chain
+
+Story: 
+Game starts, Goldey is bathing in a gold bath, he gets out and wraps a towel around him and mentions how "Gold is quite literally keeping him alive,". He then waddles
+in bed and reads the newspaper about the Fat thief going round stealing everything and leaving notes behind. He goes to bed and while asleep the fat thief comes and 
+steals Goldeys gold vault. The morning comes and Goldey panics as his gold vault is gone. He sees the note on the floor and makes a move.
+Every world completed, Goldey loses some gold colour and shine and a flash of a woman in the backdrop appears for a couple of seconds (Cassey). About halfway through, Goldey
+can't take it and is about to die from not having any gold in the last couple of days. Cassey then shows herself and gives Goldey a gold bar to rejuvenate. She then explains
+how she is after the thief as well and how she has been watching Goldey on his journey this far. She gives Goldey another movement option and says how she will "see him when
+it matters most,"
+At the end, Goldey finds the Fat Thief but some goons come from behind and it doesn't look good for Goldey, Cassey then comes out of nowhere and takes the goons out. The Fat
+thief panics and says "kill me then!", Goldey and Cassey refuse, sirens start to be heard. The police arrest the fat thief and he is locked away for life. The game fades to 
+Goldey in bed with his gold vault reading the newspaper to see an image of him and Cassey in the paper dubbed "Town Heroes!" and text about the thief being locked away  
+for life. 
+
+Customization:
+After completing the game, the player gets access to the Star Fashion Shop and Cassey as a playable character. The player can purchase a number of costumes for Goldey and
+Cassey and select the skin they want to play as, as well as change the colours of the skin.
+Earning all stars reveals 2 secret costumes for Goldey and Cassey, King and Queen costumes!
+
+Gameplay:
+8-10 worlds, world 1 can be a tutorial/introduction world with 4 levels, worlds 2-4 can be 8 levels, completing world 4 is the halfway point. Worlds 5-8 can be 10 levels.
+Mechanics: Double jump (Default, Goldey can flap his wings for this animation, Cassey can flip for this animation) (SPACE)
+		   Sprint (Default) (LSHIFT)
+		   Crouch (Default) (LCTRL)
+		   Crouch jump (Default) - More vertical distance (LCTRL + SPACE)
+		   sprint + crouch gives slide (Default) (LSHIFT + LCTRL)
+		   Slide jump (Default) - More horizontal distance (LSHIFT + LCTRL + SPACE)
+		   Dive (Default) (double tap S in mid air)
+		   Air dash (Unlocked after world 1 from learning a scroll) (E in mid air)
+		   Glide (Unlocked after world 2 from learning a scroll, Goldey can open his wings for this animation, Cassey can use rocket heals for this animation) (LALT)
+		   Shotgun shot to get more distance mid air, alt fire can be a grapple hook to attach to enemies to send you flying into them and kill them, also unlocks 
+		   flashlight which can be used to scare bat enemies away (Unlocked after world 3 from a gun vault mini puzzle) (LEFT CLICK, RIGHT CLICK, F for flashlight, TAB to
+		   swap weapons)
+		   Holster + sniper to shoot levers to open doors, alt fire can be a flare gun to distract turrets fire (Given by Cassey after world 4) (LEFT CLICK, RIGHT CLICK, F 
+		   for flashlight, TAB to swap weapons)
+Level mechanics: Spikes, platforms, moving platforms, weak constant fire rate turret, strong slow fire rate turret, levers, goon enemies, platforms that fall when touching them,
+				 Something following from behind to rush the player, platforms with mortar shots coming onto them, lasers, bats that rush you,
+Player has 2 hearts: spikes kill instantly, weak turret removes 1 heart per shot, strong turret kills instantly, goon enemies remove 1 heart, falling kills you instantly, 
+					 Something from behind kills instantly, mortar shots remove 1 heart, lasers kill instantly, bats remove 1 heart,
+Puzzle/boss at the end of a worlds last level to get to next world?
+A way to get 3 stars on a level based on how many times you die in the level (0 deaths - 3 stars, 1 death - 2 stars, any other number of deaths 1 star)
+Checkpoints throughout the level can be red flares that turn green when you walk over them.
+Levels to be designed to be difficult, each jump should sort of be like a puzzle utilizing all the mechanics in a fun way that once the player understands can then be 
+executed and done quickly and skillfully.
+Leaderboard of time taken in a level for the player?
+
+Main menu:
+Start game -> title screen with game name and Play, Options and Star Fashion Shop (locked until game completion) 
+Play -> takes user to world select screen, uncompleted worlds are greyed out with a lock, unlocked worlds are coloured and named and show how many stars you have
+Player can select a world and see all the level names in each world and star progress and best times for each level (Level name 1-1 world 1 level 1)
+Player can at any time in this menu access the options or star shop by clicking the icons in the top/bottom
+Options change graphic/display settings, keybinds, audio
+Star Fashion shop menu lets the player switch costume/character and colour each part of the character costume they have (save customs maybe?)
