@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://dfay2cdgni0fm"]
+
+[ext_resource type="Texture2D" uid="uid://cjmmdgqbsf56o" path="res://Assets/Sprites/portal.png" id="1_1a2po"]
+[ext_resource type="Script" uid="uid://cbgu2krg7tb00" path="res://Assets/Scripts/area_exit.gd" id="1_pwf35"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pwf35"]
+
+[node name="AreaExit" type="Area2D" unique_id=660033609 node_paths=PackedStringArray("sprite") groups=["area_exits"]]
+collision_layer = 65536
+script = ExtResource("1_pwf35")
+sprite = NodePath("Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=117892103]
+z_index = -10
+scale = Vector2(0.9261364, 0.93181825)
+texture = ExtResource("1_1a2po")
+region_enabled = true
+region_rect = Rect2(22, 0, 22, 22)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1705835349]
+shape = SubResource("CircleShape2D_pwf35")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
