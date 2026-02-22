@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://biu8lo01orylo" path="res://Assets/Scenes/player.tscn" id="1_0ti3t"]
 [ext_resource type="PackedScene" uid="uid://b2ivfg08flf5c" path="res://Assets/Scenes/UI/hud.tscn" id="1_6k5g7"]
+[ext_resource type="PackedScene" uid="uid://dwtptt4x6vjsg" path="res://Assets/Scenes/stopwatch.tscn" id="3_j02rm"]
 
 [node name="Gameplay" type="Node2D" unique_id=1641499011]
 
@@ -12,3 +13,5 @@
 [node name="Player" parent="." unique_id=324603296 instance=ExtResource("1_0ti3t")]
 
 [node name="Area" type="Node2D" parent="." unique_id=359885314 groups=["area_container"]]
+
+[node name="Stopwatch" parent="." unique_id=1730553543 instance=ExtResource("3_j02rm")]

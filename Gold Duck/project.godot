@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Gold Duck"
+config/name="2D-platformer-YT"
 run/main_scene="uid://b05k5v53t5372"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
@@ -26,6 +26,7 @@ area_container=""
 player_start_position=""
 player=""
 hud=""
+stopwatch=""
 
 [input]
 
