@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://biu8lo01orylo"]
 
-[ext_resource type="Texture2D" uid="uid://gsok0d55i6b2" path="res://Assets/Sprites/player.png" id="1_6cd4h"]
 [ext_resource type="Script" uid="uid://h1x6rl83s2oc" path="res://Assets/Scripts/player_controller.gd" id="1_7dd06"]
 [ext_resource type="Script" uid="uid://besv2adgg1gbd" path="res://Assets/Scripts/player_animator.gd" id="2_38rej"]
+[ext_resource type="Texture2D" uid="uid://c17mu2rwerg6s" path="res://Assets/Sprites/goldey.png" id="3_38rej"]
 
 [sub_resource type="Animation" id="Animation_7dd06"]
 length = 0.001
@@ -32,7 +32,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Rect2(0, 48, 16, 16)]
+"values": [Rect2(0, 119, 9, 25)]
 }
 
 [sub_resource type="Animation" id="Animation_38rej"]
@@ -50,7 +50,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [Rect2(0, 0, 16, 16), Rect2(16, 0, 16, 16), Rect2(32, 0, 16, 16), Rect2(48, 0, 16, 16), Rect2(64, 0, 16, 16), Rect2(80, 0, 16, 16), Rect2(96, 0, 16, 16), Rect2(96, 0, 16, 16)]
+"values": [Rect2(0, 215, 9, 25), Rect2(48, 215, 9, 25), Rect2(96, 215, 9, 25), Rect2(144, 215, 9, 25), Rect2(192, 215, 9, 25), Rect2(240, 215, 9, 25), Rect2(288, 215, 9, 25), Rect2(288, 215, 9, 25)]
 }
 
 [sub_resource type="Animation" id="Animation_23lac"]
@@ -66,7 +66,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Rect2(0, 32, 16, 16)]
+"values": [Rect2(0, 71, 9, 25)]
 }
 
 [sub_resource type="Animation" id="Animation_w3t24"]
@@ -83,7 +83,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.25, 0.5, 0.75, 1),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 0,
-"values": [Rect2(0, 16, 16, 16), Rect2(16, 16, 16, 16), Rect2(32, 16, 16, 16), Rect2(48, 16, 16, 16), Rect2(48, 16, 16, 16)]
+"values": [Rect2(0, 167, 9, 25), Rect2(48, 167, 9, 25), Rect2(96, 167, 9, 25), Rect2(144, 167, 9, 25), Rect2(144, 167, 9, 25)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_t1xgp"]
@@ -96,8 +96,8 @@ _data = {
 }
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_7dd06"]
-radius = 5.0
-height = 14.0
+radius = 4.0
+height = 24.0
 
 [node name="Player" type="CharacterBody2D" unique_id=324603296 node_paths=PackedStringArray("camera") groups=["player"]]
 z_index = 10
@@ -126,10 +126,11 @@ autoplay = &"idle"
 speed_scale = 1.5
 
 [node name="Sprite2D" type="Sprite2D" parent="PlayerAnimator" unique_id=411171416]
-texture = ExtResource("1_6cd4h")
+position = Vector2(0, -4)
+texture = ExtResource("3_38rej")
 region_enabled = true
 region_rect = Rect2(0, 0, 16, 16)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1611538800]
-position = Vector2(0, 1)
+position = Vector2(0, -4)
 shape = SubResource("CapsuleShape2D_7dd06")
