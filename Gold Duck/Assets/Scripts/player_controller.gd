@@ -9,6 +9,7 @@ var speed_multiplier = 30
 var jump_multiplier = -30
 var direction = 0
 
+# Double jump
 var jumps_used := 0
 var max_jumps := 2   # jump + double jump
 var did_double_jump := false
@@ -16,19 +17,22 @@ var did_double_jump := false
 # Dash system
 @export var dash_speed := 450.0
 @export var dash_time := 0.15
+@export var dash_cooldown := 0.25
 @export var dash_vertical_damping := 0.85
+@export var dash_gravity_scale := 0.35
 
 var is_dashing := false
 var dash_timer := 0.0
 var dash_direction := 1
+
+var dash_cooldown_timer := 0.0
+
+# Air dash tracking
 var dashes_used := 0
 var max_air_dashes := 1
 
 # Facing direction
 var facing := 1
-
-#const SPEED = 300.0
-#const JUMP_VELOCITY = -400.0
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -41,21 +45,23 @@ func _input(event):
 		set_collision_mask_value(10, true)
 
 func _physics_process(delta):
+	if dash_cooldown_timer > 0:
+		dash_cooldown_timer -= delta
+		
 	# ----- DASH -----
 	if is_dashing:
 		dash_timer -= delta
 
-		# Maintain strong horizontal speed
+		# Strong horizontal burst
 		velocity.x = dash_direction * dash_speed
 
-		# Slightly reduce vertical velocity instead of freezing it
+		# Preserve motion but soften vertical speed
 		velocity.y *= dash_vertical_damping
-
-		# Apply reduced gravity during dash (optional but feels better)
-		velocity.y += gravity * delta * 0.35
+		velocity.y += gravity * delta * dash_gravity_scale
 
 		if dash_timer <= 0:
 			is_dashing = false
+			dash_cooldown_timer = dash_cooldown
 
 		move_and_slide()
 		return
@@ -83,9 +89,8 @@ func _physics_process(delta):
 			did_double_jump = true
 
 	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash"):
-		if can_dash():
-			start_dash()
+	if Input.is_action_just_pressed("dash") and can_dash():
+		start_dash()
 
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
@@ -102,16 +107,20 @@ func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
 	dash_direction = facing
+	velocity.x += dash_direction * 150
 
 	if !is_on_floor():
 		dashes_used += 1
 	
 func can_dash() -> bool:
-	# Always allow ground dash
+	if dash_cooldown_timer > 0:
+		return false
+
+	# Ground dash allowed (but cooldown limited)
 	if is_on_floor():
 		return true
 
-	# Allow limited air dashes
+	# Air dash limited
 	return dashes_used < max_air_dashes
 
 func teleport_to_location(new_location):
