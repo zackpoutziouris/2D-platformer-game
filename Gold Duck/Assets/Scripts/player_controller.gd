@@ -27,11 +27,13 @@ var dash_direction := 1
 var dash_cooldown_timer := 0.0
 var dashes_used := 0
 var max_air_dashes := 1
-var facing := 1
 
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
 var is_crouching : bool = false
+
+# Current side player is facing
+var facing := 1
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
