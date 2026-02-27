@@ -27,6 +27,7 @@ var dash_direction := 1
 var dash_cooldown_timer := 0.0
 var dashes_used := 0
 var max_air_dashes := 1
+var facing := 1
 
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
@@ -102,7 +103,7 @@ func _physics_process(delta):
 	
 	if direction:
 		velocity.x = direction * current_speed
-		dash_direction = sign(direction)
+		facing = sign(direction)
 	else:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 
@@ -111,6 +112,7 @@ func _physics_process(delta):
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
+	dash_direction = facing
 	velocity.x += dash_direction * 150
 
 	if !is_on_floor():
