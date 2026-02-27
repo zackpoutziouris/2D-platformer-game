@@ -20,7 +20,6 @@ func _process(delta):
 	# =========================
 	# PRIORITY ANIMATIONS
 	# =========================
-
 	# Dash overrides everything
 	if player_controller.is_dashing:
 		play_if_not("dash")
@@ -31,24 +30,30 @@ func _process(delta):
 		play_if_not("double-jump")
 		return
 
-
 	# =========================
 	# AIR STATES
 	# =========================
-
 	if player_controller.velocity.y < 0:
 		play_if_not("jump")
 		return
 	elif player_controller.velocity.y > 0:
 		play_if_not("fall")
 		return
-
-
+	
+	# =========================
+	# CROUCH STATES
+	# =========================
+	if player_controller.is_crouching:
+		if abs(player_controller.velocity.x) > 0:
+			play_if_not("crouch-walk")
+		else: 
+			play_if_not("crouch")
+		return
+	
 	# =========================
 	# GROUND STATES
 	# =========================
-
 	if abs(player_controller.velocity.x) > 0 && player_controller.velocity.y == 0:
-		play_if_not("move")
+		play_if_not("walk")
 	else:
 		play_if_not("idle")

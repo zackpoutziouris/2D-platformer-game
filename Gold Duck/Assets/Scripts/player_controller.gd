@@ -1,13 +1,14 @@
 extends CharacterBody2D
 class_name PlayerController
 
+# Base movement
 @export var speed = 4
 @export var jump_power = 10
 @export var camera : Camera2D
-
 var speed_multiplier = 30
 var jump_multiplier = -30
 var direction = 0
+var current_speed = 0
 
 # Double jump
 var jumps_used := 0
@@ -20,16 +21,16 @@ var did_double_jump := false
 @export var dash_cooldown := 0.25
 @export var dash_vertical_damping := 0.85
 @export var dash_gravity_scale := 0.35
-
 var is_dashing := false
 var dash_timer := 0.0
 var dash_direction := 1
-
 var dash_cooldown_timer := 0.0
-
-# Air dash tracking
 var dashes_used := 0
 var max_air_dashes := 1
+
+# Crouch
+@export var crouch_speed_multiplier : float = 0.5
+var is_crouching : bool = false
 
 # Facing direction
 var facing := 1
@@ -89,17 +90,24 @@ func _physics_process(delta):
 			did_double_jump = true
 
 	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash") and can_dash():
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching:
 		start_dash()
+	
+	# ----- CROUCH INPUT -----
+	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
 
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
-
+	current_speed = speed * speed_multiplier
+	
+	if is_crouching:
+		current_speed *= crouch_speed_multiplier
+	
 	if direction:
-		velocity.x = direction * speed * speed_multiplier
+		velocity.x = direction * current_speed
 		facing = sign(direction)
 	else:
-		velocity.x = move_toward(velocity.x, 0, speed * speed_multiplier)
+		velocity.x = move_toward(velocity.x, 0, current_speed)
 
 	move_and_slide()
 	
