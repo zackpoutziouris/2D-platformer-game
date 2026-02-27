@@ -32,9 +32,6 @@ var max_air_dashes := 1
 @export var crouch_speed_multiplier : float = 0.5
 var is_crouching : bool = false
 
-# Facing direction
-var facing := 1
-
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
@@ -105,7 +102,7 @@ func _physics_process(delta):
 	
 	if direction:
 		velocity.x = direction * current_speed
-		facing = sign(direction)
+		dash_direction = sign(direction)
 	else:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 
@@ -114,7 +111,6 @@ func _physics_process(delta):
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
-	dash_direction = facing
 	velocity.x += dash_direction * 150
 
 	if !is_on_floor():
