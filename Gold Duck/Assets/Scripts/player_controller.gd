@@ -5,11 +5,14 @@ class_name PlayerController
 @export var speed = 4
 @export var jump_power = 10
 @export var camera : Camera2D
+@export var air_control_when_change_direction : float = 0.75
 var speed_multiplier = 30
 var jump_multiplier = -30
 var direction = 0
 var current_speed = 0
 var jump_force = 0.0
+var base_speed = 1
+var move_speed_current : float = 0.0
 
 # Double jump
 var jumps_used := 0
@@ -31,23 +34,23 @@ var max_air_dashes := 1
 
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
-var is_crouching : bool = false
 @export var crouch_jump_multiplier : float = 1.3
 @export var crouch_jump_horizontal_boost : float = 1
+var is_crouching : bool = false
 
 # Sprint
 @export var sprint_multiplier : float = 1.6
 @export var sprint_accel : float = 6.0
 @export var ground_decel : float = 14.0
-@export var air_control : float = 0.75
-
 var is_sprinting : bool = false
 var sprint_momentum : bool = false
-var move_speed_current : float = 0.0
-var previous_facing := 1
+var target_speed = 1
 
-# Current side player is facing
+# Direction
 var facing := 1
+var previous_facing := 1
+var input_dir : int = 0.0
+var velocity_dir : int = 1
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -132,15 +135,15 @@ func _physics_process(delta):
 
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
-	var input_dir : int = signi(direction)
+	input_dir = signi(direction)
 	
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
 		sprint_momentum = false
 		is_sprinting = false
 		move_speed_current *= 0.35
 	
-	var base_speed = speed * speed_multiplier
-	var target_speed = base_speed
+	base_speed = speed * speed_multiplier
+	target_speed = base_speed
 
 	if is_crouching:
 		target_speed *= crouch_speed_multiplier
@@ -148,7 +151,7 @@ func _physics_process(delta):
 		target_speed *= sprint_multiplier
 
 	# Detect direction change
-	var velocity_dir : int = signi(velocity.x)
+	velocity_dir = signi(velocity.x)
 
 	# --------------------------------
 	# DIRECTION SWITCH (GROUND)
@@ -172,7 +175,7 @@ func _physics_process(delta):
 			move_speed_current = lerpf(
 				move_speed_current,
 				target_speed,
-				clamp(sprint_accel * air_control * delta, 0.0, 1.0)
+				clamp(sprint_accel * air_control_when_change_direction * delta, 0.0, 1.0)
 			)
 
 		previous_facing = facing
