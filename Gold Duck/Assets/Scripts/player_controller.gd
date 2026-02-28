@@ -14,6 +14,7 @@ var current_speed = 0
 var jumps_used := 0
 var max_jumps := 2   # jump + double jump
 var did_double_jump := false
+var jump_force = 0.0
 
 # Dash system
 @export var dash_speed := 450.0
@@ -31,6 +32,8 @@ var max_air_dashes := 1
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
 var is_crouching : bool = false
+@export var crouch_jump_multiplier : float = 1.3
+@export var crouch_jump_horizontal_boost : float = 1
 
 # Current side player is facing
 var facing := 1
@@ -83,7 +86,17 @@ func _physics_process(delta):
 
 	# ----- JUMP INPUT -----
 	if Input.is_action_just_pressed("jump") and jumps_used < max_jumps:
-		velocity.y = jump_power * jump_multiplier
+		jump_force = jump_power * jump_multiplier
+		
+		# Crouch jump (only when crouched on the ground)
+		if is_crouching and is_on_floor():
+			jump_force *= crouch_jump_multiplier
+			
+			# Forward pop on crouch jump
+			if direction != 0:
+				velocity.x *= crouch_jump_horizontal_boost
+				
+		velocity.y = jump_force
 		jumps_used += 1
 		
 		if jumps_used == 2:
