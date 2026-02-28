@@ -169,7 +169,7 @@ script = ExtResource("1_7dd06")
 camera = NodePath("Camera2D")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=673301599]
-zoom = Vector2(4, 4)
+zoom = Vector2(4.75, 4.75)
 process_callback = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

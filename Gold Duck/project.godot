@@ -19,6 +19,11 @@ config/icon="res://icon.svg"
 
 GameManager="*uid://dijyovk0tn01w"
 
+[display]
+
+window/size/viewport_width=2540
+window/size/viewport_height=1440
+
 [global_group]
 
 area_exits=""

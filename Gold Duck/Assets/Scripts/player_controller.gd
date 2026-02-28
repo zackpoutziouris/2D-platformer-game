@@ -5,7 +5,7 @@ class_name PlayerController
 @export var speed = 4
 @export var jump_power = 10
 @export var camera : Camera2D
-@export var air_control_when_change_direction : float = 0.75
+@export var air_control_when_change_direction : float = 0.9
 var speed_multiplier = 30
 var jump_multiplier = -30
 var direction = 0
@@ -147,7 +147,7 @@ func _physics_process(delta):
 
 	if is_crouching:
 		target_speed *= crouch_speed_multiplier
-	elif is_sprinting and is_on_floor():
+	elif sprint_momentum:
 		target_speed *= sprint_multiplier
 
 	# Detect direction change
