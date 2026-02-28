@@ -9,12 +9,12 @@ var speed_multiplier = 30
 var jump_multiplier = -30
 var direction = 0
 var current_speed = 0
+var jump_force = 0.0
 
 # Double jump
 var jumps_used := 0
 var max_jumps := 2   # jump + double jump
 var did_double_jump := false
-var jump_force = 0.0
 
 # Dash system
 @export var dash_speed := 450.0
@@ -34,6 +34,17 @@ var max_air_dashes := 1
 var is_crouching : bool = false
 @export var crouch_jump_multiplier : float = 1.3
 @export var crouch_jump_horizontal_boost : float = 1
+
+# Sprint
+@export var sprint_multiplier : float = 1.6
+@export var sprint_accel : float = 6.0
+@export var ground_decel : float = 14.0
+@export var air_control : float = 0.75
+
+var is_sprinting : bool = false
+var sprint_momentum : bool = false
+var move_speed_current : float = 0.0
+var previous_facing := 1
 
 # Current side player is facing
 var facing := 1
@@ -108,19 +119,74 @@ func _physics_process(delta):
 	
 	# ----- CROUCH INPUT -----
 	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
+	
+	# ----- SPRINT INPUT -----
+	if is_on_floor():
+		sprint_momentum = (
+			Input.is_action_pressed("sprint")
+			and direction != 0
+			and !is_crouching
+		)
+		
+	is_sprinting = sprint_momentum
 
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
-	current_speed = speed * speed_multiplier
+	var input_dir : int = signi(direction)
 	
+	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
+		sprint_momentum = false
+		is_sprinting = false
+		move_speed_current *= 0.35
+	
+	var base_speed = speed * speed_multiplier
+	var target_speed = base_speed
+
 	if is_crouching:
-		current_speed *= crouch_speed_multiplier
-	
-	if direction:
-		velocity.x = direction * current_speed
-		facing = sign(direction)
+		target_speed *= crouch_speed_multiplier
+	elif is_sprinting and is_on_floor():
+		target_speed *= sprint_multiplier
+
+	# Detect direction change
+	var velocity_dir : int = signi(velocity.x)
+
+	# --------------------------------
+	# DIRECTION SWITCH (GROUND)
+	# --------------------------------
+	if is_on_floor() and input_dir != 0 and velocity_dir != 0 and input_dir != velocity_dir:
+		move_speed_current *= 0.25   # heavy speed loss
+		sprint_momentum = false      # must rebuild sprint
+
+	# --------------------------------
+	# ACCELERATION (GROUND)
+	# --------------------------------
+	if direction != 0:
+		if is_on_floor():
+			move_speed_current = lerpf(
+				move_speed_current,
+				target_speed,
+				clamp(sprint_accel * delta, 0.0, 1.0)
+			)
+		else:
+			# limited air control
+			move_speed_current = lerpf(
+				move_speed_current,
+				target_speed,
+				clamp(sprint_accel * air_control * delta, 0.0, 1.0)
+			)
+
+		previous_facing = facing
+		facing = input_dir
 	else:
-		velocity.x = move_toward(velocity.x, 0, current_speed)
+		if is_on_floor():
+			move_speed_current = lerpf(
+				move_speed_current,
+				0.0,
+				clamp(ground_decel * delta, 0.0, 1.0)
+			)
+
+	# Apply velocity
+	velocity.x = facing * move_speed_current
 
 	move_and_slide()
 	
