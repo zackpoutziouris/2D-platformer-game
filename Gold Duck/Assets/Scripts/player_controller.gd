@@ -42,7 +42,8 @@ var max_air_dashes := 1
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
 @export var crouch_jump_multiplier : float = 1.42
-@export var crouch_jump_back_boost : float = 1.15
+@export var crouch_jump_back_boost : float = 0.5
+@export var crouch_jump_air_control : float = 0.05
 var is_crouching : bool = false
 var is_crouch_jump : bool = false
 
@@ -195,15 +196,23 @@ func _physics_process(delta):
 				clamp(sprint_accel * delta, 0.0, 1.0)
 			)
 		else:
-			# limited air control
-			move_speed_current = lerpf(
-				move_speed_current,
-				target_speed,
-				clamp(sprint_accel * air_control_when_change_direction * delta, 0.0, 1.0)
-			)
+			if is_crouch_jump:
+				# Minimal steering during crouch jump
+				move_speed_current = lerpf(
+					move_speed_current,
+					move_speed_current * signi(velocity.x),
+					clamp(sprint_accel * crouch_jump_air_control * delta, 0.0, 1.0)
+				)
+			else:
+				move_speed_current = lerpf(
+					move_speed_current,
+					target_speed,
+					clamp(sprint_accel * air_control_when_change_direction * delta, 0.0, 1.0)
+				)
 
 		previous_facing = facing
-		facing = input_dir
+		if not is_crouch_jump:
+			facing = input_dir
 	else:
 		if is_on_floor():
 			move_speed_current = lerpf(
