@@ -25,6 +25,7 @@ var jump_hold_timer : float = 0.0
 var jumps_used := 0
 var max_jumps := 2   # jump + double jump
 var did_double_jump := false
+var locked_air_direction: int = 0
 
 # Dash system
 @export var dash_speed := 450.0
@@ -113,10 +114,14 @@ func _physics_process(delta):
 		jumps_used = 0
 		did_double_jump = false
 		dashes_used = 0
+		locked_air_direction = 0
 
 		if is_crouch_jump:
 			# Hard stop horizontal momentum from crouch jump
 			velocity.x = 0.0
+			move_speed_current = 0.0
+			
+		if is_on_floor() and input_dir == 0:
 			move_speed_current = 0.0
 
 		is_crouch_jump = false
@@ -135,10 +140,10 @@ func _physics_process(delta):
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
 			
-			var back_dir := -facing
+			locked_air_direction = -facing
 			
 			move_speed_current = base_speed * crouch_jump_back_boost
-			velocity.x = back_dir * move_speed_current
+			velocity.x = locked_air_direction * move_speed_current
 				
 		velocity.y = jump_force
 		jump_hold_timer = 0.0
@@ -167,6 +172,14 @@ func _physics_process(delta):
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
 	input_dir = signi(direction)
+	
+	# ------------------------------------------------
+	# CROUCH JUMP LOCK (NO HORIZONTAL MODIFICATION)
+	# ------------------------------------------------
+	if is_crouch_jump and not is_on_floor():
+		velocity.x = locked_air_direction * move_speed_current
+		move_and_slide()
+		return
 	
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
 		sprint_momentum = false
@@ -203,11 +216,13 @@ func _physics_process(delta):
 			)
 		else:
 			if not is_crouch_jump:
-				move_speed_current = lerpf(
-					move_speed_current,
-					target_speed,
-					clamp(sprint_accel * air_control_when_change_direction * delta, 0.0, 1.0)
-				)
+				if input_dir != 0:
+					locked_air_direction = input_dir
+					move_speed_current = lerpf(
+						move_speed_current,
+						target_speed,
+						clamp(sprint_accel * air_control_when_change_direction * delta, 0.0, 1.0)
+					)
 
 		previous_facing = facing
 		if not is_crouch_jump:
@@ -221,8 +236,11 @@ func _physics_process(delta):
 			)
 
 	# Apply velocity
-	if not is_crouch_jump:
+	if is_on_floor():
 		velocity.x = facing * move_speed_current
+	else:
+		if locked_air_direction != 0:
+			velocity.x = locked_air_direction * move_speed_current
 
 	move_and_slide()
 	

@@ -166,7 +166,25 @@ position = Vector2(0, -8)
 collision_mask = 768
 platform_on_leave = 2
 script = ExtResource("1_7dd06")
+speed = null
+jump_power = null
 camera = NodePath("Camera2D")
+air_control_when_change_direction = null
+jump_hold_gravity_scale = null
+jump_cut_gravity_scale = null
+max_jump_hold_time = null
+dash_speed = null
+dash_time = null
+dash_cooldown = null
+dash_vertical_damping = null
+dash_gravity_scale = null
+crouch_speed_multiplier = null
+crouch_jump_multiplier = null
+crouch_jump_back_boost = null
+crouch_jump_air_control = null
+sprint_multiplier = null
+sprint_accel = null
+ground_decel = null
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=673301599]
 zoom = Vector2(4.75, 4.75)
