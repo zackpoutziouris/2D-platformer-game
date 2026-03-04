@@ -41,8 +41,8 @@ var max_air_dashes := 1
 
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
-@export var crouch_jump_multiplier : float = 1.3
-@export var crouch_jump_horizontal_boost : float = 1
+@export var crouch_jump_multiplier : float = 1.42
+@export var crouch_jump_back_boost : float = 1.15
 var is_crouching : bool = false
 var is_crouch_jump : bool = false
 
@@ -128,9 +128,10 @@ func _physics_process(delta):
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
 			
-			# Forward/backward pop on crouch jump
-			if direction != 0:
-				velocity.x *= crouch_jump_horizontal_boost
+			var back_dir := -facing
+			
+			move_speed_current = base_speed * -crouch_jump_back_boost
+			velocity.x = back_dir * move_speed_current
 				
 		velocity.y = jump_force
 		jump_hold_timer = 0.0
