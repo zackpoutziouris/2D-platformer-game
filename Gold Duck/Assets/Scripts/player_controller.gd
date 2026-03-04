@@ -2,12 +2,12 @@ extends CharacterBody2D
 class_name PlayerController
 
 # Base movement
-@export var speed = 4
-@export var jump_power = 9
+@export var speed: float = 4
+@export var jump_power: float = 9
 @export var camera : Camera2D
 @export var air_control_when_change_direction : float = 0.9
-var speed_multiplier = 30
-var jump_multiplier = -30
+var speed_multiplier: float = 30
+var jump_multiplier: float = -30
 var direction = 0
 var current_speed = 0
 var jump_force = 0.0
@@ -113,6 +113,12 @@ func _physics_process(delta):
 		jumps_used = 0
 		did_double_jump = false
 		dashes_used = 0
+
+		if is_crouch_jump:
+			# Hard stop horizontal momentum from crouch jump
+			velocity.x = 0.0
+			move_speed_current = 0.0
+
 		is_crouch_jump = false
 
 	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
@@ -131,7 +137,7 @@ func _physics_process(delta):
 			
 			var back_dir := -facing
 			
-			move_speed_current = base_speed * -crouch_jump_back_boost
+			move_speed_current = base_speed * crouch_jump_back_boost
 			velocity.x = back_dir * move_speed_current
 				
 		velocity.y = jump_force
@@ -196,14 +202,7 @@ func _physics_process(delta):
 				clamp(sprint_accel * delta, 0.0, 1.0)
 			)
 		else:
-			if is_crouch_jump:
-				# Minimal steering during crouch jump
-				move_speed_current = lerpf(
-					move_speed_current,
-					move_speed_current * signi(velocity.x),
-					clamp(sprint_accel * crouch_jump_air_control * delta, 0.0, 1.0)
-				)
-			else:
+			if not is_crouch_jump:
 				move_speed_current = lerpf(
 					move_speed_current,
 					target_speed,
@@ -222,7 +221,8 @@ func _physics_process(delta):
 			)
 
 	# Apply velocity
-	velocity.x = facing * move_speed_current
+	if not is_crouch_jump:
+		velocity.x = facing * move_speed_current
 
 	move_and_slide()
 	

@@ -13,9 +13,9 @@ func _process(delta):
 	animation_player.speed_scale = 1.0
 	
 	# --- Flip sprite ---
-	if player_controller.direction == 1:
+	if player_controller.facing == 1:
 		sprite.flip_h = false
-	elif player_controller.direction == -1:
+	elif player_controller.facing == -1:
 		sprite.flip_h = true
 
 
