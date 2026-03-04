@@ -3,7 +3,7 @@ class_name PlayerController
 
 # Base movement
 @export var speed = 4
-@export var jump_power = 10
+@export var jump_power = 9
 @export var camera : Camera2D
 @export var air_control_when_change_direction : float = 0.9
 var speed_multiplier = 30
@@ -13,6 +13,13 @@ var current_speed = 0
 var jump_force = 0.0
 var base_speed = 1
 var move_speed_current : float = 0.0
+
+# Variable jump tuning
+@export var jump_hold_gravity_scale : float = 0.6
+@export var jump_cut_gravity_scale : float = 2.2
+@export var max_jump_hold_time : float = 0.25
+
+var jump_hold_timer : float = 0.0
 
 # Double jump
 var jumps_used := 0
@@ -86,7 +93,16 @@ func _physics_process(delta):
 
 	# ----- GRAVITY -----
 	if not is_on_floor():
-		velocity.y += gravity * delta
+		# While rising
+		if velocity.y < 0:
+			if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
+				velocity.y += gravity * jump_hold_gravity_scale * delta
+				jump_hold_timer += delta
+			else:
+				velocity.y += gravity * jump_cut_gravity_scale * delta
+		else:
+			# Falling
+			velocity.y += gravity * delta
 
 	# ----- RESET JUMPS -----
 	if is_on_floor():
@@ -111,6 +127,7 @@ func _physics_process(delta):
 				velocity.x *= crouch_jump_horizontal_boost
 				
 		velocity.y = jump_force
+		jump_hold_timer = 0.0
 		jumps_used += 1
 		
 		if jumps_used == 2:
