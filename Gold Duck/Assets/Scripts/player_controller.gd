@@ -44,6 +44,7 @@ var max_air_dashes := 1
 @export var crouch_jump_multiplier : float = 1.3
 @export var crouch_jump_horizontal_boost : float = 1
 var is_crouching : bool = false
+var is_crouch_jump : bool = false
 
 # Sprint
 @export var sprint_multiplier : float = 1.6
@@ -93,15 +94,17 @@ func _physics_process(delta):
 
 	# ----- GRAVITY -----
 	if not is_on_floor():
-		# While rising
 		if velocity.y < 0:
-			if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
-				velocity.y += gravity * jump_hold_gravity_scale * delta
-				jump_hold_timer += delta
+			if is_crouch_jump:
+				# Always full jump height
+				velocity.y += gravity * delta
 			else:
-				velocity.y += gravity * jump_cut_gravity_scale * delta
+				if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
+					velocity.y += gravity * jump_hold_gravity_scale * delta
+					jump_hold_timer += delta
+				else:
+					velocity.y += gravity * jump_cut_gravity_scale * delta
 		else:
-			# Falling
 			velocity.y += gravity * delta
 
 	# ----- RESET JUMPS -----
@@ -109,6 +112,7 @@ func _physics_process(delta):
 		jumps_used = 0
 		did_double_jump = false
 		dashes_used = 0
+		is_crouch_jump = false
 
 	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
@@ -117,12 +121,14 @@ func _physics_process(delta):
 	# ----- JUMP INPUT -----
 	if Input.is_action_just_pressed("jump") and jumps_used < max_jumps:
 		jump_force = jump_power * jump_multiplier
+		is_crouch_jump = false
 		
 		# Crouch jump (only when crouched on the ground)
 		if is_crouching and is_on_floor():
 			jump_force *= crouch_jump_multiplier
+			is_crouch_jump = true
 			
-			# Forward pop on crouch jump
+			# Forward/backward pop on crouch jump
 			if direction != 0:
 				velocity.x *= crouch_jump_horizontal_boost
 				
