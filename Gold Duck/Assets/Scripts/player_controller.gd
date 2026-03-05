@@ -28,15 +28,14 @@ var did_double_jump := false
 var locked_air_direction: int = 0
 
 # Dash system
-@export var dash_speed := 450.0
-@export var dash_time := 0.15
+@export var dash_distance := 65
+@export var dash_time := 0.12
 @export var dash_cooldown := 0.25
-@export var dash_vertical_damping := 0.85
-@export var dash_gravity_scale := 0.35
 var is_dashing := false
 var dash_timer := 0.0
 var dash_direction := 1
 var dash_cooldown_timer := 0.0
+var dash_speed := 0.0
 var dashes_used := 0
 var max_air_dashes := 1
 
@@ -76,22 +75,21 @@ func _physics_process(delta):
 	if dash_cooldown_timer > 0:
 		dash_cooldown_timer -= delta
 		
+	# ----- DASH INPUT -----
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching:
+		start_dash()
+	
 	# ----- DASH -----
 	if is_dashing:
 		dash_timer -= delta
 
-		# Strong horizontal burst
-		velocity.x = dash_direction * dash_speed
-
-		# Preserve motion but soften vertical speed
-		velocity.y *= dash_vertical_damping
-		velocity.y += gravity * delta * dash_gravity_scale
+		var motion := Vector2(dash_direction * dash_speed * delta, 0)
+		move_and_collide(motion)
 
 		if dash_timer <= 0:
 			is_dashing = false
 			dash_cooldown_timer = dash_cooldown
 
-		move_and_slide()
 		return
 
 	# ----- GRAVITY -----
@@ -151,10 +149,6 @@ func _physics_process(delta):
 		
 		if jumps_used == 2:
 			did_double_jump = true
-
-	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching:
-		start_dash()
 	
 	# ----- CROUCH INPUT -----
 	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
@@ -248,7 +242,15 @@ func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
 	dash_direction = facing
-	velocity.x += dash_direction * 150
+	
+	dash_speed = dash_distance / dash_time
+	
+	# ----- HARD CANCEL ALL MOMENTUM -----
+	velocity = Vector2.ZERO
+	move_speed_current = 0.0
+	locked_air_direction = 0
+	is_crouch_jump = false
+	jump_hold_timer = max_jump_hold_time
 
 	if !is_on_floor():
 		dashes_used += 1
@@ -256,7 +258,7 @@ func start_dash():
 func can_dash() -> bool:
 	if dash_cooldown_timer > 0:
 		return false
-
+	
 	# Ground dash allowed (but cooldown limited)
 	if is_on_floor():
 		return true
