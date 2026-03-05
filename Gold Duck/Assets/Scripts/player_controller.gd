@@ -136,7 +136,7 @@ func _physics_process(delta):
 		is_crouch_jump = false
 		
 		# Crouch jump (only when crouched on the ground)
-		if is_crouching and is_on_floor():
+		if is_crouching and is_on_floor() and input_dir == 0 and abs(velocity.x) < 1:
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
 			
