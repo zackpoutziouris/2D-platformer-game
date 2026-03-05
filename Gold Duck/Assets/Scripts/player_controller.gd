@@ -5,7 +5,7 @@ class_name PlayerController
 @export var speed: float = 4
 @export var jump_power: float = 9
 @export var camera : Camera2D
-@export var air_control_when_change_direction : float = 0.9
+@export var air_control_when_change_direction : float = 0.8
 var speed_multiplier: float = 30
 var jump_multiplier: float = -30
 var direction = 0
@@ -43,7 +43,7 @@ var max_air_dashes := 1
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
 @export var crouch_jump_multiplier : float = 1.42
-@export var crouch_jump_back_boost : float = 0.5
+@export var crouch_jump_back_boost : float = 1
 @export var crouch_jump_air_control : float = 0.05
 var is_crouching : bool = false
 var is_crouch_jump : bool = false
