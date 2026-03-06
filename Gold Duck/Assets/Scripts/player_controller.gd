@@ -9,7 +9,6 @@ class_name PlayerController
 var speed_multiplier: float = 30
 var jump_multiplier: float = -30
 var direction = 0
-var current_speed = 0
 var jump_force = 0.0
 var base_speed = 1
 var move_speed_current : float = 0.0
@@ -38,13 +37,13 @@ var dash_cooldown_timer := 0.0
 var dash_speed := 0.0
 var dashes_used := 0
 var max_air_dashes := 1
+var dash_motion : Vector2 = Vector2.ZERO
 
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
 @export var crouch_jump_multiplier : float = 1.42
 @export var crouch_hop_multiplier : float = 0.5
 @export var crouch_jump_back_boost : float = 1
-@export var crouch_jump_air_control : float = 0.05
 var is_crouching : bool = false
 var is_crouch_jump : bool = false
 
@@ -84,8 +83,8 @@ func _physics_process(delta):
 	if is_dashing:
 		dash_timer -= delta
 
-		var motion := Vector2(dash_direction * dash_speed * delta, 0)
-		move_and_collide(motion)
+		dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
+		move_and_collide(dash_motion)
 
 		if dash_timer <= 0:
 			is_dashing = false
