@@ -42,6 +42,7 @@ var max_air_dashes := 1
 # Crouch
 @export var crouch_speed_multiplier : float = 0.5
 @export var crouch_jump_multiplier : float = 1.42
+@export var crouch_hop_multiplier : float = 0.5
 @export var crouch_jump_back_boost : float = 1
 @export var crouch_jump_air_control : float = 0.05
 var is_crouching : bool = false
@@ -133,8 +134,8 @@ func _physics_process(delta):
 		jump_force = jump_power * jump_multiplier
 		is_crouch_jump = false
 		
-		# Crouch jump (only when crouched on the ground)
-		if is_crouching and is_on_floor() and input_dir == 0 and abs(velocity.x) < 1:
+		# Crouch jump (only when crouched on the ground stationary)
+		if is_crouching and is_on_floor() and abs(velocity.x) < 1:
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
 			
@@ -142,6 +143,8 @@ func _physics_process(delta):
 			
 			move_speed_current = base_speed * crouch_jump_back_boost
 			velocity.x = locked_air_direction * move_speed_current
+		elif is_crouching and is_on_floor():
+			jump_force *= crouch_hop_multiplier
 				
 		velocity.y = jump_force
 		jump_hold_timer = 0.0
