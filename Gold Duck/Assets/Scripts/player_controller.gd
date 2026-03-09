@@ -142,28 +142,8 @@ func _physics_process(delta):
 		jumps_used = 1
 
 	# ----- JUMP INPUT -----
-	if Input.is_action_just_pressed("jump") and jumps_used < max_jumps:
-		jump_force = jump_power * jump_multiplier
-		is_crouch_jump = false
-		
-		# Crouch jump (only when crouched on the ground stationary)
-		if is_crouching and is_on_floor() and !is_sliding and abs(velocity.x) < 1:
-			jump_force *= crouch_jump_multiplier
-			is_crouch_jump = true
-			
-			locked_air_direction = -facing
-			
-			move_speed_current = base_speed * crouch_jump_back_boost
-			velocity.x = locked_air_direction * move_speed_current
-		elif is_crouching and is_on_floor() and !is_sliding:
-			jump_force *= crouch_hop_multiplier
-				
-		velocity.y = jump_force
-		jump_hold_timer = 0.0
-		jumps_used += 1
-		
-		if jumps_used == 2:
-			did_double_jump = true
+	if Input.is_action_just_pressed("jump"):
+		perform_jump()
 	
 	# ----- SLIDE INPUT -----
 	if Input.is_action_just_pressed("crouch") \
@@ -188,10 +168,6 @@ func _physics_process(delta):
 		
 	# ----- SLIDE MOVEMENT -----
 	if is_sliding:
-		# Exit slide if jump is pressed
-		if Input.is_action_just_pressed("jump"):
-			is_sliding = false
-
 		slide_timer -= delta
 
 		# allow cancelling by pressing opposite direction
@@ -283,7 +259,55 @@ func _physics_process(delta):
 			velocity.x = locked_air_direction * move_speed_current
 
 	move_and_slide()
-	
+
+func perform_jump():
+
+	if jumps_used >= max_jumps:
+		return
+
+	var jf = jump_power * jump_multiplier
+	var horizontal_override := false
+
+	# ----- CROUCH JUMP -----
+	if is_crouching and !is_sliding and is_on_floor():
+
+		if abs(velocity.x) < 1:
+			jf *= crouch_jump_multiplier
+			is_crouch_jump = true
+
+			locked_air_direction = -facing
+			move_speed_current = base_speed * crouch_jump_back_boost
+			velocity.x = locked_air_direction * move_speed_current
+			horizontal_override = true
+		else:
+			jf *= crouch_hop_multiplier
+
+	# ----- SLIDE JUMP -----
+	elif is_sliding:
+
+		is_sliding = false
+		locked_air_direction = slide_direction
+
+	# ----- APPLY JUMP -----
+	velocity.y = jf
+	jump_hold_timer = 0.0
+	jumps_used += 1
+
+	if jumps_used == 2:
+		did_double_jump = true
+		
+		# Release crouch jump directional lock
+		is_crouch_jump = false
+		locked_air_direction = 0
+
+	# ensure slide/crouch states don't persist incorrectly
+	if is_sliding:
+		is_sliding = false
+
+	if !horizontal_override and !is_on_floor():
+		if locked_air_direction != 0:
+			velocity.x = locked_air_direction * move_speed_current
+
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
