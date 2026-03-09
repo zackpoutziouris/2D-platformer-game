@@ -55,6 +55,15 @@ var is_sprinting : bool = false
 var sprint_momentum : bool = false
 var target_speed = 1
 
+# Slide
+@export var slide_boost_multiplier := 5
+@export var slide_duration := 1
+@export var slide_decel := 5
+
+var is_sliding := false
+var slide_timer := 0.0
+var slide_direction := 0
+
 # Direction
 var facing := 1
 var previous_facing := 1
@@ -74,6 +83,10 @@ func _input(event):
 func _physics_process(delta):
 	if dash_cooldown_timer > 0:
 		dash_cooldown_timer -= delta
+	
+	# ----- MOVEMENT -----
+	direction = Input.get_axis("move_left", "move_right")
+	input_dir = signi(direction)
 		
 	# ----- DASH INPUT -----
 	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching:
@@ -134,7 +147,7 @@ func _physics_process(delta):
 		is_crouch_jump = false
 		
 		# Crouch jump (only when crouched on the ground stationary)
-		if is_crouching and is_on_floor() and abs(velocity.x) < 1:
+		if is_crouching and is_on_floor() and !is_sliding and abs(velocity.x) < 1:
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
 			
@@ -142,7 +155,7 @@ func _physics_process(delta):
 			
 			move_speed_current = base_speed * crouch_jump_back_boost
 			velocity.x = locked_air_direction * move_speed_current
-		elif is_crouching and is_on_floor():
+		elif is_crouching and is_on_floor() and !is_sliding:
 			jump_force *= crouch_hop_multiplier
 				
 		velocity.y = jump_force
@@ -151,6 +164,14 @@ func _physics_process(delta):
 		
 		if jumps_used == 2:
 			did_double_jump = true
+	
+	# ----- SLIDE INPUT -----
+	if Input.is_action_just_pressed("crouch") \
+	and sprint_momentum \
+	and is_on_floor() \
+	and !is_sliding:
+
+		start_slide()
 	
 	# ----- CROUCH INPUT -----
 	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
@@ -164,10 +185,33 @@ func _physics_process(delta):
 		)
 		
 	is_sprinting = sprint_momentum
+		
+	# ----- SLIDE MOVEMENT -----
+	if is_sliding:
+		# Exit slide if jump is pressed
+		if Input.is_action_just_pressed("jump"):
+			is_sliding = false
 
-	# ----- MOVEMENT -----
-	direction = Input.get_axis("move_left", "move_right")
-	input_dir = signi(direction)
+		slide_timer -= delta
+
+		# allow cancelling by pressing opposite direction
+		if input_dir != 0 and input_dir != slide_direction:
+			is_sliding = false
+
+		# decelerate
+		move_speed_current = lerpf(
+			move_speed_current,
+			0.0,
+			clamp(slide_decel * delta, 0.0, 1.0)
+		)
+
+		velocity.x = slide_direction * move_speed_current
+		move_and_slide()
+
+		if slide_timer <= 0 or abs(move_speed_current) < 5:
+			is_sliding = false
+
+		return
 	
 	# ------------------------------------------------
 	# CROUCH JUMP LOCK (NO HORIZONTAL MODIFICATION)
@@ -267,6 +311,16 @@ func can_dash() -> bool:
 
 	# Air dash limited
 	return dashes_used < max_air_dashes
+
+func start_slide():
+
+	is_sliding = true
+	slide_timer = slide_duration
+	slide_direction = facing
+
+	# initial burst
+	move_speed_current = max(move_speed_current, base_speed * sprint_multiplier)
+	move_speed_current *= slide_boost_multiplier
 
 func teleport_to_location(new_location):
 	position =  new_location

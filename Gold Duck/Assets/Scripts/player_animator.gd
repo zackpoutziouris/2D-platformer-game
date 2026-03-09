@@ -26,7 +26,12 @@ func _process(delta):
 	if player_controller.is_dashing:
 		play_if_not("dash")
 		return
-		
+	
+	# Slide
+	if player_controller.is_sliding:
+		play_if_not("slide")
+		return
+	
 	# Double jump plays once
 	if player_controller.did_double_jump && player_controller.velocity.y < 0:
 		play_if_not("double-jump")
