@@ -132,7 +132,7 @@ func _physics_process(delta):
 			velocity.x = 0.0
 			move_speed_current = 0.0
 			
-		if is_on_floor() and input_dir == 0:
+		if is_on_floor() and input_dir == 0 and !is_sliding:
 			move_speed_current = 0.0
 
 		is_crouch_jump = false
