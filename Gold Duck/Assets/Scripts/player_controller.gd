@@ -64,6 +64,13 @@ var is_sliding := false
 var slide_timer := 0.0
 var slide_direction := 0
 
+# Dive
+@export var dive_speed := 600
+
+var is_diving := false
+var last_down_tap_time := 0.0
+var down_double_tap_window := 0.25
+
 # Direction
 var facing := 1
 var previous_facing := 1
@@ -79,6 +86,15 @@ func _input(event):
 		set_collision_mask_value(10, false)
 	else:		
 		set_collision_mask_value(10, true)
+	
+	# Handle double tapping S
+	if event.is_action_pressed("move_down"):
+		var now = Time.get_ticks_msec() / 1000.0
+
+		if now - last_down_tap_time < down_double_tap_window and !is_on_floor():
+			start_dive()
+
+		last_down_tap_time = now
 
 func _physics_process(delta):
 	if dash_cooldown_timer > 0:
@@ -102,6 +118,18 @@ func _physics_process(delta):
 		if dash_timer <= 0:
 			is_dashing = false
 			dash_cooldown_timer = dash_cooldown
+
+		return
+	
+	# ----- DIVE -----
+	if is_diving:
+		velocity.x = 0
+		velocity.y = dive_speed
+
+		move_and_slide()
+
+		if is_on_floor():
+			is_diving = false
 
 		return
 
@@ -345,6 +373,19 @@ func start_slide():
 	# initial burst
 	move_speed_current = max(move_speed_current, base_speed * sprint_multiplier)
 	move_speed_current *= slide_boost_multiplier
+
+func start_dive():
+	if is_on_floor():
+		return
+
+	is_diving = true
+
+	# cancel existing movement
+	is_sliding = false
+	is_dashing = false
+
+	velocity.x = 0
+	move_speed_current = 0
 
 func teleport_to_location(new_location):
 	position =  new_location
