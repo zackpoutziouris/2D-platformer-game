@@ -27,6 +27,11 @@ func _process(delta):
 		play_if_not("dash")
 		return
 	
+	# Dive
+	if player_controller.is_diving:
+		play_if_not("dive")
+		return
+	
 	# Slide
 	if player_controller.is_sliding:
 		play_if_not("slide")

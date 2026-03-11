@@ -105,7 +105,7 @@ func _physics_process(delta):
 	input_dir = signi(direction)
 		
 	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching:
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
 		start_dash()
 	
 	# ----- DASH -----
