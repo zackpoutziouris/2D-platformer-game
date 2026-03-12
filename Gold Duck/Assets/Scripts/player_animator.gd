@@ -46,7 +46,15 @@ func _process(delta):
 	# AIR STATES
 	# =========================
 	if player_controller.velocity.y < 0:
-		play_if_not("jump")
+		match player_controller.bhop_stacks:
+			0:
+				play_if_not("jump")
+			1:
+				play_if_not("bhop1")
+			2:
+				play_if_not("bhop2")
+			_:
+				play_if_not("bhop3")
 		return
 	elif player_controller.velocity.y > 0:
 		play_if_not("fall")

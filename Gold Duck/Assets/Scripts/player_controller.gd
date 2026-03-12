@@ -26,6 +26,16 @@ var max_jumps := 2   # jump + double jump
 var did_double_jump := false
 var locked_air_direction: int = 0
 
+# B-Hop system
+@export var bhop_window_frames := 6
+@export var bhop_horizontal_boosts := [2, 2.5, 3]
+@export var bhop_vertical_boosts := [2, 2.5, 3]
+@export var bhop_max_stacks := 3
+
+var bhop_window_timer := 0
+var bhop_stacks := 0
+var was_on_floor := false
+
 # Dash system
 @export var dash_distance := 65
 @export var dash_time := 0.12
@@ -103,6 +113,15 @@ func _physics_process(delta):
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
 	input_dir = signi(direction)
+	
+	# Detect landing
+	if is_on_floor() and !was_on_floor:
+		bhop_window_timer = bhop_window_frames
+
+	was_on_floor = is_on_floor()
+	
+	if bhop_window_timer > 0:
+		bhop_window_timer -= 1
 		
 	# ----- DASH INPUT -----
 	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
@@ -164,6 +183,9 @@ func _physics_process(delta):
 			move_speed_current = 0.0
 
 		is_crouch_jump = false
+		
+		if is_on_floor() and abs(move_speed_current) < 5:
+			bhop_stacks = 0
 
 	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
@@ -171,6 +193,19 @@ func _physics_process(delta):
 
 	# ----- JUMP INPUT -----
 	if Input.is_action_just_pressed("jump"):
+		# ----- B-HOP CHECK -----
+		if bhop_window_timer > 0 and abs(move_speed_current) > 5:
+			
+			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
+
+			var stack_index = bhop_stacks - 1
+
+			move_speed_current *= bhop_horizontal_boosts[stack_index]
+			velocity.y *= bhop_vertical_boosts[stack_index]
+
+		else:
+			bhop_stacks = 0
+
 		perform_jump()
 	
 	# ----- SLIDE INPUT -----
@@ -299,7 +334,7 @@ func perform_jump():
 	# ----- CROUCH JUMP -----
 	if is_crouching and !is_sliding and is_on_floor():
 
-		if abs(velocity.x) < 1:
+		if abs(move_speed_current) < 1:
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
 
