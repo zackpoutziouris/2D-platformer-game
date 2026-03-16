@@ -27,7 +27,7 @@ var did_double_jump := false
 var locked_air_direction: int = 0
 
 # Glide
-@export var glide_fall_speed := 0.1
+@export var glide_fall_speed := 70
 @export var glide_walk_control := 1.0
 var is_gliding := false
 
@@ -179,7 +179,10 @@ func _physics_process(delta):
 					velocity.y += gravity * jump_cut_gravity_scale * delta
 		else:
 			if is_gliding:
-				velocity.y += min(velocity.y, glide_fall_speed)
+				velocity.y += gravity * delta
+				
+				if velocity.y > glide_fall_speed:
+					velocity.y = glide_fall_speed
 			else: 
 				velocity.y += gravity * delta
 
