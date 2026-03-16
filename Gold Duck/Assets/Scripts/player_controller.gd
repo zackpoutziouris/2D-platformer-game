@@ -122,6 +122,8 @@ func _physics_process(delta):
 	# ----- GLIDE INPUT -----
 	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
 		is_gliding = true
+		is_crouch_jump = false
+		locked_air_direction = 0
 	else:
 		is_gliding = false
 	
