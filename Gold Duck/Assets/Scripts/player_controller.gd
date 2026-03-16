@@ -28,6 +28,7 @@ var locked_air_direction: int = 0
 
 # Glide
 @export var glide_fall_speed := 70
+@export var fall_speed_limit_for_glide_to_work := 500
 @export var glide_walk_control := 1.0
 var is_gliding := false
 
@@ -181,7 +182,7 @@ func _physics_process(delta):
 			if is_gliding:
 				velocity.y += gravity * delta
 				
-				if velocity.y > glide_fall_speed:
+				if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
 					velocity.y = glide_fall_speed
 			else: 
 				velocity.y += gravity * delta
