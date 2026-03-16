@@ -45,6 +45,10 @@ func _process(delta):
 	# =========================
 	# AIR STATES
 	# =========================
+	# Glide
+	if player_controller.is_gliding:
+		play_if_not("glide")
+		return
 	if player_controller.velocity.y < 0:
 		match player_controller.bhop_stacks:
 			0:

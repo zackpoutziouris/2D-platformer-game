@@ -26,6 +26,11 @@ var max_jumps := 2   # jump + double jump
 var did_double_jump := false
 var locked_air_direction: int = 0
 
+# Glide
+@export var glide_fall_speed := 0.1
+@export var glide_walk_control := 1.0
+var is_gliding := false
+
 # B-Hop system
 @export var bhop_window_frames := 6
 @export var bhop_horizontal_boosts := [2, 2.5, 3]
@@ -114,6 +119,12 @@ func _physics_process(delta):
 	direction = Input.get_axis("move_left", "move_right")
 	input_dir = signi(direction)
 	
+	# ----- GLIDE INPUT -----
+	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
+		is_gliding = true
+	else:
+		is_gliding = false
+	
 	# Detect landing
 	if is_on_floor() and !was_on_floor:
 		bhop_window_timer = bhop_window_frames
@@ -165,7 +176,10 @@ func _physics_process(delta):
 				else:
 					velocity.y += gravity * jump_cut_gravity_scale * delta
 		else:
-			velocity.y += gravity * delta
+			if is_gliding:
+				velocity.y += min(velocity.y, glide_fall_speed)
+			else: 
+				velocity.y += gravity * delta
 
 	# ----- RESET JUMPS -----
 	if is_on_floor():
@@ -272,6 +286,8 @@ func _physics_process(delta):
 		target_speed *= crouch_speed_multiplier
 	elif sprint_momentum:
 		target_speed *= sprint_multiplier
+	elif is_gliding:
+		target_speed = base_speed
 
 	# Detect direction change
 	velocity_dir = signi(velocity.x)
@@ -295,12 +311,18 @@ func _physics_process(delta):
 			)
 		else:
 			if not is_crouch_jump:
+
+				var air_control = air_control_when_change_direction
+
+				if is_gliding:
+					air_control = glide_walk_control
+
 				if input_dir != 0:
 					locked_air_direction = input_dir
 					move_speed_current = lerpf(
 						move_speed_current,
-						target_speed,
-						clamp(sprint_accel * air_control_when_change_direction * delta, 0.0, 1.0)
+						base_speed,
+						clamp(sprint_accel * air_control * delta, 0.0, 1.0)
 					)
 
 		previous_facing = facing
@@ -418,6 +440,7 @@ func start_dive():
 	# cancel existing movement
 	is_sliding = false
 	is_dashing = false
+	is_gliding = false
 
 	velocity.x = 0
 	move_speed_current = 0
