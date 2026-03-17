@@ -125,8 +125,6 @@ func _physics_process(delta):
 	
 	# Detect landing
 	handle_bhop_landing()
-	if is_on_floor() and !was_on_floor:
-		bhop_window_timer = bhop_window_frames
 
 	was_on_floor = is_on_floor()
 	
