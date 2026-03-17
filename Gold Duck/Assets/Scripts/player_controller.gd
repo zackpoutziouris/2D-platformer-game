@@ -114,7 +114,7 @@ func _input(event):
 
 func _physics_process(delta):
 	update_dash_cooldown(delta)
-	update_bhop_window(delta)
+	update_bhop_window()
 	
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
@@ -124,6 +124,7 @@ func _physics_process(delta):
 	update_glide_state()
 	
 	# Detect landing
+	handle_bhop_landing()
 	if is_on_floor() and !was_on_floor:
 		bhop_window_timer = bhop_window_frames
 
@@ -169,8 +170,8 @@ func _physics_process(delta):
 
 		is_crouch_jump = false
 		
-		if is_on_floor() and abs(move_speed_current) < 5:
-			bhop_stacks = 0
+
+	handle_bhop_reset()
 
 	# ----- JUMP INPUT -----
 	handle_jump_input()
@@ -299,46 +300,8 @@ func _physics_process(delta):
 
 	move_and_slide()
 
-func handle_dash_input():
-	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
-		start_dash()
 
-func update_dash(delta) -> bool:
-	if !is_dashing:
-		return false
-	
-	dash_timer -= delta
-	dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
-	move_and_collide(dash_motion)
-	
-	if dash_timer <= 0:
-		end_dash()
-	
-	return true
-
-func update_dash_cooldown(delta):
-	if dash_cooldown_timer > 0:
-		dash_cooldown_timer -= delta
-
-func end_dash():
-	is_dashing = false
-	dash_cooldown_timer = dash_cooldown
-
-func update_glide_state():
-	if !is_on_floor() \
-	and velocity.y > 0 \
-	and Input.is_action_pressed("jump") \
-	and !is_diving \
-	and !is_dashing:
-		
-		is_gliding = true
-		
-		# preserve your current behaviour
-		is_crouch_jump = false
-		locked_air_direction = 0
-	else:
-		is_gliding = false
-
+# ---- GRAVITY FUNCTIONS ----
 func apply_gravity(delta):
 	if is_on_floor():
 		return
@@ -364,7 +327,23 @@ func apply_jump_gravity(delta):
 func apply_fall_gravity(delta):
 	velocity.y += gravity * delta
 	apply_glide_effect()
+
+# ---- GLIDE FUNCTIONS ----
+func update_glide_state():
+	if !is_on_floor() \
+	and velocity.y > 0 \
+	and Input.is_action_pressed("jump") \
+	and !is_diving \
+	and !is_dashing:
 		
+		is_gliding = true
+		
+		# preserve your current behaviour
+		is_crouch_jump = false
+		locked_air_direction = 0
+	else:
+		is_gliding = false
+
 func apply_glide_effect():
 	if !is_gliding:
 		return
@@ -372,24 +351,12 @@ func apply_glide_effect():
 	if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
 		velocity.y = glide_fall_speed
 
+# ---- JUMP FUNCTIONS ----
 func handle_jump_input():
 	if !Input.is_action_just_pressed("jump"):
 		return
 	apply_bhop()
 	apply_jump()
-
-func apply_bhop():
-	if bhop_window_timer > 0 and abs(move_speed_current) > 5:
-		bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
-		var stack_index = bhop_stacks - 1
-		move_speed_current *= bhop_horizontal_boosts[stack_index]
-		velocity.y *= bhop_vertical_boosts[stack_index]
-	else: 
-		bhop_stacks = 0
-
-func update_bhop_window(delta):
-	if bhop_window_timer > 0:
-		bhop_window_timer -= delta
 
 func apply_jump():
 	if jumps_used >= max_jumps:
@@ -449,6 +416,68 @@ func update_jump_state():
 		jumps_used = 0
 		did_double_jump = false
 
+# ---- BHOP FUNCTIONS ----
+func apply_bhop():
+	if !can_bhop():
+		reset_bhop()
+		return
+	
+	increment_bhop_stack()
+	apply_bhop_boosts()
+	
+func can_bhop() -> bool:
+	return bhop_window_timer > 0 and abs(move_speed_current)> 5
+
+func increment_bhop_stack():
+	bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
+
+func apply_bhop_boosts():
+	var stack_index = bhop_stacks - 1
+	
+	move_speed_current *= bhop_horizontal_boosts[stack_index]
+	velocity.y *= bhop_vertical_boosts[stack_index]
+
+func reset_bhop():
+	bhop_stacks = 0
+
+func update_bhop_window():
+	if bhop_window_timer > 0:
+		bhop_window_timer -= 1
+		
+func handle_bhop_landing():
+	if is_on_floor() and !was_on_floor:
+		bhop_window_timer = bhop_window_frames
+
+func handle_bhop_reset():
+	if is_on_floor() and abs(move_speed_current) < 5:
+		bhop_stacks = 0
+
+# ---- DASH FUNCTIONS ----
+func handle_dash_input():
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
+		start_dash()
+
+func update_dash(delta) -> bool:
+	if !is_dashing:
+		return false
+	
+	dash_timer -= delta
+	dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
+	move_and_collide(dash_motion)
+	
+	if dash_timer <= 0:
+		end_dash()
+	
+	return true
+
+func update_dash_cooldown(delta):
+	if dash_cooldown_timer > 0:
+		dash_cooldown_timer -= delta
+
+func end_dash():
+	is_dashing = false
+	dash_cooldown_timer = dash_cooldown
+
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
@@ -477,8 +506,8 @@ func can_dash() -> bool:
 	# Air dash limited
 	return dashes_used < max_air_dashes
 
+# ---- SLIDE FUNCTIONS ---- 
 func start_slide():
-
 	is_sliding = true
 	slide_timer = slide_duration
 	slide_direction = facing
@@ -487,6 +516,7 @@ func start_slide():
 	move_speed_current = max(move_speed_current, base_speed * sprint_multiplier)
 	move_speed_current *= slide_boost_multiplier
 
+# ---- DIVE FUNCTIONS ----
 func start_dive():
 	if is_on_floor():
 		return
@@ -500,7 +530,8 @@ func start_dive():
 
 	velocity.x = 0
 	move_speed_current = 0
-
+	
+ # ---- TP TO NEXT LEVEL FUNCTIONS ----
 func teleport_to_location(new_location):
 	position =  new_location
 	camera.reset_smoothing()
