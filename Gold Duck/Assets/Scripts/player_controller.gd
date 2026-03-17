@@ -113,8 +113,8 @@ func _input(event):
 		last_down_tap_time = now
 
 func _physics_process(delta):
-	if dash_cooldown_timer > 0:
-		dash_cooldown_timer -= delta
+	update_dash_cooldown(delta)
+	update_bhop_window(delta)
 	
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
@@ -133,20 +133,10 @@ func _physics_process(delta):
 		bhop_window_timer -= 1
 		
 	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
-		start_dash()
+	handle_dash_input()
 	
 	# ----- DASH -----
-	if is_dashing:
-		dash_timer -= delta
-
-		dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
-		move_and_collide(dash_motion)
-
-		if dash_timer <= 0:
-			is_dashing = false
-			dash_cooldown_timer = dash_cooldown
-
+	if update_dash(delta):
 		return
 	
 	# ----- DIVE -----
@@ -309,6 +299,31 @@ func _physics_process(delta):
 
 	move_and_slide()
 
+func handle_dash_input():
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
+		start_dash()
+
+func update_dash(delta) -> bool:
+	if !is_dashing:
+		return false
+	
+	dash_timer -= delta
+	dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
+	move_and_collide(dash_motion)
+	
+	if dash_timer <= 0:
+		end_dash()
+	
+	return true
+
+func update_dash_cooldown(delta):
+	if dash_cooldown_timer > 0:
+		dash_cooldown_timer -= delta
+
+func end_dash():
+	is_dashing = false
+	dash_cooldown_timer = dash_cooldown
+
 func update_glide_state():
 	if !is_on_floor() \
 	and velocity.y > 0 \
@@ -371,6 +386,10 @@ func apply_bhop():
 		velocity.y *= bhop_vertical_boosts[stack_index]
 	else: 
 		bhop_stacks = 0
+
+func update_bhop_window(delta):
+	if bhop_window_timer > 0:
+		bhop_window_timer -= delta
 
 func apply_jump():
 	if jumps_used >= max_jumps:
