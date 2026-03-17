@@ -148,14 +148,14 @@ func _physics_process(delta):
 		start_slide()
 	
 	# ----- CROUCH INPUT -----
-	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
+	update_crouch_state()
 	
 	# ----- SPRINT INPUT -----
 	if is_on_floor():
 		sprint_momentum = (
 			Input.is_action_pressed("sprint")
 			and direction != 0
-			and !is_crouching
+			and can_sprint()
 		)
 		
 	is_sprinting = sprint_momentum
@@ -187,8 +187,7 @@ func _physics_process(delta):
 	# CROUCH JUMP LOCK (NO HORIZONTAL MODIFICATION)
 	# ------------------------------------------------
 	if is_crouch_jump and not is_on_floor():
-		velocity.x = locked_air_direction * move_speed_current
-		move_and_slide()
+		apply_crouch_jump_lock()
 		return
 	
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
@@ -200,7 +199,7 @@ func _physics_process(delta):
 	target_speed = base_speed
 
 	if is_crouching:
-		target_speed *= crouch_speed_multiplier
+		target_speed = apply_crouch_speed(target_speed)
 	elif sprint_momentum:
 		target_speed *= sprint_multiplier
 	elif is_gliding:
@@ -351,18 +350,8 @@ func apply_jump():
 	var horizontal_jump_override := false
 
 	# ----- CROUCH JUMP -----
-	if is_crouching and !is_sliding and is_on_floor():
-
-		if abs(move_speed_current) < 1:
-			jump_force *= crouch_jump_multiplier
-			is_crouch_jump = true
-
-			locked_air_direction = -facing
-			move_speed_current = base_speed * crouch_jump_back_boost
-			velocity.x = locked_air_direction * move_speed_current
-			horizontal_jump_override = true
-		else:
-			jump_force *= crouch_hop_multiplier
+	if try_crouch_jump():
+		horizontal_jump_override = true
 
 	# ----- SLIDE JUMP -----
 	elif is_sliding:
@@ -402,6 +391,43 @@ func reset_double_jump_state():
 		did_double_jump = false
 
 # ---- CROUCH FUNCTIONS ----
+func update_crouch_state():
+	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
+
+func try_crouch_jump() -> bool:
+	if !is_crouching or is_sliding or !is_on_floor():
+		return false
+	
+	# stationary crouch jump
+	if abs(move_speed_current) < 1:
+		jump_force *= crouch_jump_multiplier
+		start_crouch_jump_back()
+		return true
+	
+	# moving crouch hop
+	jump_force *= crouch_hop_multiplier
+	return false
+	
+func start_crouch_jump_back():
+	is_crouch_jump = true
+	
+	locked_air_direction = -facing
+	move_speed_current = base_speed * crouch_jump_back_boost
+	velocity.x = locked_air_direction * move_speed_current
+
+func should_lock_crouch_jump() -> bool:
+	return is_crouch_jump and !is_on_floor()
+	
+func apply_crouch_jump_lock():
+	velocity.x = locked_air_direction * move_speed_current
+	move_and_slide()
+
+func apply_crouch_speed(current_speed: float) -> float:
+	if !is_crouching:
+		return current_speed
+	
+	return current_speed * crouch_speed_multiplier
+
 func reset_crouch_jump_state():
 	if !is_crouch_jump:
 		return
@@ -410,6 +436,10 @@ func reset_crouch_jump_state():
 	velocity.x = 0.0
 	move_speed_current = 0.0
 	is_crouch_jump = false
+
+# ---- SPRINT FUNCTIONS ----
+func can_sprint() -> bool:
+	return !is_crouching
 
 # ---- BHOP FUNCTIONS ----
 func apply_bhop():
