@@ -93,11 +93,7 @@ var velocity_dir : int = 1
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func _input(event):
-	# Handle jumping down from a see through platform utilizing masks
-	if event.is_action_pressed("move_down"):
-		set_collision_mask_value(10, false)
-	else:		
-		set_collision_mask_value(10, true)
+	drop_down_from_platform(event)
 
 func _physics_process(delta):
 	update_dash_cooldown(delta)
@@ -167,7 +163,7 @@ func _physics_process(delta):
 
 
 
-# ---- RESET FUNCTION WHEN TOUCHING THE GROUND ----
+# ---- RESET FUNCTIONS WHEN TOUCHING THE GROUND ----
 func handle_ground_resets():
 	if !is_on_floor():
 		return
@@ -179,11 +175,9 @@ func handle_ground_resets():
 	handle_bhop_reset()
 	apply_ground_idle_stop()
 
-# ---- RESET AIR DIRECTION ----
 func reset_air_direction():
 	locked_air_direction = 0
 
-# ---- STOP MOVING WHEN NOT INPUTTING ANYTHING ----
 func apply_ground_idle_stop():
 	if input_dir == 0 and !is_sliding and move_speed_current > 5:
 		move_speed_current *= 1.05
@@ -216,6 +210,15 @@ func apply_jump_gravity(delta):
 func apply_fall_gravity(delta):
 	velocity.y += gravity * delta
 	apply_glide_effect()
+	
+# ---- DROP DOWN FROM PLATFORM FUNCTIONS ----
+func drop_down_from_platform(event):
+	# Handle jumping down from a see through platform utilizing masks
+	if event.is_action_pressed("move_down"):
+		set_collision_mask_value(10, false)
+	else:		
+		set_collision_mask_value(10, true)
+	
 
 # ---- GLIDE FUNCTIONS ----
 func update_glide_state():
