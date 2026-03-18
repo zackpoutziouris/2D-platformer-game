@@ -17,7 +17,6 @@ var move_speed_current : float = 0.0
 @export var jump_hold_gravity_scale : float = 0.6
 @export var jump_cut_gravity_scale : float = 2.2
 @export var max_jump_hold_time : float = 0.25
-
 var jump_hold_timer : float = 0.0
 
 # Double jump
@@ -37,7 +36,6 @@ var is_gliding := false
 @export var bhop_horizontal_boosts := [2, 2.5, 3]
 @export var bhop_vertical_boosts := [2, 2.5, 3]
 @export var bhop_max_stacks := 3
-
 var bhop_window_timer := 0
 var bhop_stacks := 0
 var was_on_floor := false
@@ -72,7 +70,7 @@ var target_speed = 1
 
 # Slide
 @export var slide_boost_multiplier := 2
-@export var slide_duration := 0.6
+@export var slide_duration := 0.5
 @export var slide_decel := 5
 var is_sliding := false
 var slide_timer := 0.0
@@ -99,8 +97,7 @@ func _physics_process(delta):
 	update_bhop_window()
 	
 	# ----- MOVEMENT -----
-	direction = Input.get_axis("move_left", "move_right")
-	input_dir = signi(direction)
+	handle_horizontal_movement_input()
 	
 	# ----- GLIDE INPUT -----
 	update_glide_state()
@@ -358,6 +355,10 @@ func update_sprint_state():
 		sprinting = false
 
 # ---- HORIZONTAL MOVEMENT FUNCTIONS ---- 
+func handle_horizontal_movement_input():
+	direction = Input.get_axis("move_left", "move_right")
+	input_dir = signi(direction)
+	
 func calculate_target_speed():
 	base_speed = speed * speed_multiplier
 	target_speed = base_speed
