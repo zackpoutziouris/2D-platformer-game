@@ -93,61 +93,51 @@ func _input(event):
 	drop_down_from_platform(event)
 
 func _physics_process(delta):
+	# ---- TIMERS ----
 	update_dash_cooldown(delta)
 	update_bhop_window()
-	
-	# ----- MOVEMENT -----
-	handle_horizontal_movement_input()
-	
-	# ----- GLIDE INPUT -----
-	update_glide_state()
-	
-	# Detect landing
-	handle_bhop_landing()
 
+	handle_bhop_landing()
 	was_on_floor = is_on_floor()
-		
-	# ----- DASH INPUT -----
+
+	# ---- INPUT ----
+	handle_horizontal_movement_input()
+	update_sprint_state()
+
 	handle_dash_input()
+	handle_dive_input()
+	handle_slide_input()
+	handle_jump_input()
 	
-	# ----- DASH -----
+	update_crouch_state()
+
+	# ---- STATE UPDATES ----
+	update_jump_state()
+	update_glide_state()
+
+	# ---- HIGH PRIORITY ACTIONS ----
 	if update_dash(delta):
 		return
 	
-	if update_dive(delta): 
+	if update_dive(delta):
 		return
-	
-	# ----- DIVE INPUT -----
-	handle_dive_input()
 
-	# ----- GRAVITY -----
+	# ---- PHYSICS ----
 	apply_gravity(delta)
 
-	# ----- RESET MECHANICS WHEN TOUCHING THE FLOOR AGAIN -----
+	# ---- GROUND RESETS ----
 	handle_ground_resets()
 
-	# ----- JUMP INPUT -----
-	handle_jump_input()
-	update_jump_state()
-	
-	# ----- CROUCH INPUT -----
-	update_crouch_state()
-	
-	# ----- SLIDE INPUT -----
-	handle_slide_input()
-	
-	# ----- SPRINT INPUT -----
-	update_sprint_state()
-		
-	# ----- SLIDE MOVEMENT -----
+	# ---- SLIDE ----
 	if update_slide(delta):
 		return
-	
-	# CROUCH JUMP LOCK (NO HORIZONTAL MODIFICATION MID CROUCH JUMP)
-	if is_crouch_jump and not is_on_floor():
+
+	# ---- SPECIAL LOCKS (CROUCH JUMP LOCKS HORIZONTAL MOVEMENT) ----
+	if should_lock_crouch_jump():
 		apply_crouch_jump_lock()
 		return
-	
+
+	# ---- HORIZONTAL MOVEMENT AND ACCELERATION ----
 	calculate_target_speed()
 	handle_direction_switch()
 	apply_horizontal_acceleration(delta)
