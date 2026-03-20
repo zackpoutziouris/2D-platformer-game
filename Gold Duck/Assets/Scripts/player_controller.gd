@@ -67,7 +67,8 @@ var is_crouch_jump : bool = false
 @export var sprint_multiplier : float = 1.6
 @export var sprint_accel : float = 6.0
 @export var ground_decel : float = 14.0
-var sprinting : bool = false
+var is_sprinting : bool = false
+var sprint_momentum : bool = false
 var target_speed = 1
 
 # Slide
@@ -138,22 +139,48 @@ func _physics_process(delta):
 	handle_jump_input()
 	update_jump_state()
 	
+	# ----- SLIDE INPUT -----
+	if Input.is_action_just_pressed("crouch") \
+	and sprint_momentum \
+	and is_on_floor() \
+	and !is_sliding:
+
+		start_slide()
+	
 	# ----- CROUCH INPUT -----
 	update_crouch_state()
 	
-	# ----- SLIDE INPUT -----
-	handle_slide_input()
-	
 	# ----- SPRINT INPUT -----
 	if is_on_floor():
-		sprinting = (
+		sprint_momentum = (
 			Input.is_action_pressed("sprint")
 			and direction != 0
 			and can_sprint()
 		)
 		
+	is_sprinting = sprint_momentum
+		
 	# ----- SLIDE MOVEMENT -----
-	if update_slide(delta):
+	if is_sliding:
+		slide_timer -= delta
+
+		# allow cancelling by pressing opposite direction
+		if input_dir != 0 and input_dir != slide_direction:
+			is_sliding = false
+
+		# decelerate
+		move_speed_current = lerpf(
+			move_speed_current,
+			0.0,
+			clamp(slide_decel * delta, 0.0, 1.0)
+		)
+
+		velocity.x = slide_direction * move_speed_current
+		move_and_slide()
+
+		if slide_timer <= 0 or abs(move_speed_current) < 5:
+			is_sliding = false
+
 		return
 	
 	# ------------------------------------------------
@@ -164,7 +191,8 @@ func _physics_process(delta):
 		return
 	
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
-		sprinting = false
+		sprint_momentum = false
+		is_sprinting = false
 		move_speed_current *= 0.35
 	
 	base_speed = speed * speed_multiplier
@@ -172,7 +200,7 @@ func _physics_process(delta):
 
 	if is_crouching:
 		target_speed = apply_crouch_speed(target_speed)
-	elif sprinting:
+	elif sprint_momentum:
 		target_speed *= sprint_multiplier
 	elif is_gliding:
 		target_speed = base_speed
@@ -185,7 +213,7 @@ func _physics_process(delta):
 	# --------------------------------
 	if is_on_floor() and input_dir != 0 and velocity_dir != 0 and input_dir != velocity_dir:
 		move_speed_current *= 0.25   # heavy speed loss
-		sprinting = false      # must rebuild sprint
+		sprint_momentum = false      # must rebuild sprint
 
 	# --------------------------------
 	# ACCELERATION (GROUND)
@@ -232,9 +260,6 @@ func _physics_process(delta):
 			velocity.x = locked_air_direction * move_speed_current
 
 	move_and_slide()
-
-
-
 
 
 # ---- RESET FUNCTION WHEN TOUCHING THE GROUND ----
@@ -510,66 +535,14 @@ func reset_dash_state():
 	dashes_used = 0
 
 # ---- SLIDE FUNCTIONS ---- 
-func handle_slide_input():
-	if !Input.is_action_just_pressed("crouch"):
-		return
-		
-	if can_start_slide():
-		start_slide()
-
-func can_start_slide() -> bool:
-	return sprinting and is_on_floor() and !is_sliding
-
 func start_slide():
 	is_sliding = true
 	slide_timer = slide_duration
 	slide_direction = facing
 
-	apply_slide_initial_boost()
-
-func apply_slide_initial_boost():
+	# initial burst
 	move_speed_current = max(move_speed_current, base_speed * sprint_multiplier)
 	move_speed_current *= slide_boost_multiplier
-
-func update_slide(delta) -> bool:
-	if !is_sliding:
-		return false
-	
-	apply_slide_physics(delta)
-	
-	if should_end_slide():
-		end_slide()
-	
-	return true
-
-func apply_slide_physics(delta):
-	slide_timer -= delta
-	
-	handle_slide_cancel_input()
-	apply_slide_deceleration(delta)
-	apply_slide_velocity()
-	
-	move_and_slide()
-
-func handle_slide_cancel_input():
-	if input_dir != 0 and input_dir != slide_direction:
-		end_slide()
-
-func apply_slide_deceleration(delta):
-	move_speed_current = lerpf(
-		move_speed_current,
-		0.0,
-		clamp(slide_decel * delta, 0.0, 1.0)
-	)
-	
-func apply_slide_velocity():
-	velocity.x = slide_direction * move_speed_current
-
-func should_end_slide() -> bool:
-	return slide_timer <= 0 or abs(move_speed_current) < 5
-
-func end_slide():
-	is_sliding = false
 
 # ---- DIVE FUNCTIONS ----
 func handle_dive_input():
