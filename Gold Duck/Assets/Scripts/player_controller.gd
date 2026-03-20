@@ -189,6 +189,8 @@ func _physics_process(delta):
 
 	# ----- RESET JUMPS -----
 	if is_on_floor():
+		jumps_used = 0
+		did_double_jump = false
 		dashes_used = 0
 		locked_air_direction = 0
 
@@ -205,9 +207,26 @@ func _physics_process(delta):
 		if is_on_floor() and abs(move_speed_current) < 5:
 			bhop_stacks = 0
 
+	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
+	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
+		jumps_used = 1
+
 	# ----- JUMP INPUT -----
-	handle_jump_input()
-	update_jump_state()
+	if Input.is_action_just_pressed("jump"):
+		# ----- B-HOP CHECK -----
+		if bhop_window_timer > 0 and abs(move_speed_current) > 5:
+			
+			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
+
+			var stack_index = bhop_stacks - 1
+
+			move_speed_current *= bhop_horizontal_boosts[stack_index]
+			velocity.y *= bhop_vertical_boosts[stack_index]
+
+		else:
+			bhop_stacks = 0
+
+		perform_jump()
 	
 	# ----- SLIDE INPUT -----
 	if Input.is_action_just_pressed("crouch") \
@@ -332,22 +351,7 @@ func _physics_process(delta):
 
 	move_and_slide()
 
-func handle_jump_input():
-	if !Input.is_action_just_pressed("jump"):
-		return
-	apply_bhop()
-	apply_jump()
-
-func apply_bhop():
-	if bhop_window_timer > 0 and abs(move_speed_current) > 5:
-		bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
-		var stack_index = bhop_stacks - 1
-		move_speed_current *= bhop_horizontal_boosts[stack_index]
-		velocity.y *= bhop_vertical_boosts[stack_index]
-	else: 
-		bhop_stacks = 0
-
-func apply_jump():
+func perform_jump():
 
 	if jumps_used >= max_jumps:
 		return
@@ -380,7 +384,6 @@ func apply_jump():
 	jump_hold_timer = 0.0
 	jumps_used += 1
 
-	# ----- DOUBLE JUMP -----
 	if jumps_used == 2:
 		did_double_jump = true
 		
@@ -389,22 +392,12 @@ func apply_jump():
 		locked_air_direction = 0
 
 	# ensure slide/crouch states don't persist incorrectly
-	is_sliding = false
-	
-	# ----- AIR HORIZONTAL PRESERVE -----
+	if is_sliding:
+		is_sliding = false
+
 	if !horizontal_jump_override and !is_on_floor():
 		if locked_air_direction != 0:
 			velocity.x = locked_air_direction * move_speed_current
-			
-func update_jump_state():
-	# Ledge fall counts as first jump
-	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
-		jumps_used = 1
-
-	# Reset on landing
-	if is_on_floor():
-		jumps_used = 0
-		did_double_jump = false
 
 func start_dash():
 	is_dashing = true
