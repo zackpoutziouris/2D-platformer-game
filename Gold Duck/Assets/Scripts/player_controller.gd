@@ -121,7 +121,12 @@ func _physics_process(delta):
 	input_dir = signi(direction)
 	
 	# ----- GLIDE INPUT -----
-	update_glide_state()
+	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
+		is_gliding = true
+		is_crouch_jump = false
+		locked_air_direction = 0
+	else:
+		is_gliding = false
 	
 	# Detect landing
 	if is_on_floor() and !was_on_floor:
@@ -309,21 +314,6 @@ func _physics_process(delta):
 
 	move_and_slide()
 
-func update_glide_state():
-	if !is_on_floor() \
-	and velocity.y > 0 \
-	and Input.is_action_pressed("jump") \
-	and !is_diving \
-	and !is_dashing:
-		
-		is_gliding = true
-		
-		# preserve your current behaviour
-		is_crouch_jump = false
-		locked_air_direction = 0
-	else:
-		is_gliding = false
-
 func apply_gravity(delta):
 	if is_on_floor():
 		return
@@ -348,12 +338,11 @@ func apply_jump_gravity(delta):
 		
 func apply_fall_gravity(delta):
 	velocity.y += gravity * delta
-	apply_glide_effect()
+	
+	if is_gliding:
+		apply_glide_limiter()
 		
-func apply_glide_effect():
-	if !is_gliding:
-		return
-		
+func apply_glide_limiter():
 	if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
 		velocity.y = glide_fall_speed
 
