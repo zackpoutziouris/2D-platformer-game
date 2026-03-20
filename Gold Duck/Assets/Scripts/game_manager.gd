@@ -21,7 +21,7 @@ func next_area():
 	current_area += 1
 	load_area(current_area)
 	
-func load_area(area_number):
+func load_area(_area_number):
 	# Checking new scene path
 	var full_path = area_path + "area_" + str(current_area) + ".tscn"
 	var scene = load(full_path) as PackedScene

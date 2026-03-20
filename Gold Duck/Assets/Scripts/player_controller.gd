@@ -72,8 +72,8 @@ var sprint_momentum : bool = false
 var target_speed = 1
 
 # Slide
-@export var slide_boost_multiplier := 5
-@export var slide_duration := 1
+@export var slide_boost_multiplier := 1.7
+@export var slide_duration := 0.9
 @export var slide_decel := 5
 
 var is_sliding := false
@@ -81,7 +81,7 @@ var slide_timer := 0.0
 var slide_direction := 0
 
 # Dive
-@export var dive_speed := 600
+@export var dive_speed := 400
 
 var is_diving := false
 var last_down_tap_time := 0.0
@@ -90,7 +90,7 @@ var down_double_tap_window := 0.25
 # Direction
 var facing := 1
 var previous_facing := 1
-var input_dir : int = 0.0
+var input_dir : int = 0
 var velocity_dir : int = 1
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
@@ -104,13 +104,8 @@ func _input(event):
 		set_collision_mask_value(10, true)
 	
 	# Handle double tapping S
-	if event.is_action_pressed("move_down"):
-		var now = Time.get_ticks_msec() / 1000.0
-
-		if now - last_down_tap_time < down_double_tap_window and !is_on_floor():
-			start_dive()
-
-		last_down_tap_time = now
+	if event.is_action_pressed("move_down") and !is_on_floor():
+		start_dive()
 
 func _physics_process(delta):
 	if dash_cooldown_timer > 0:
@@ -229,11 +224,7 @@ func _physics_process(delta):
 		perform_jump()
 	
 	# ----- SLIDE INPUT -----
-	if Input.is_action_just_pressed("crouch") \
-	and sprint_momentum \
-	and is_on_floor() \
-	and !is_sliding:
-
+	if Input.is_action_just_pressed("crouch") and sprint_momentum and is_on_floor() and !is_sliding and abs(velocity.x) > 150:
 		start_slide()
 	
 	# ----- CROUCH INPUT -----
@@ -253,9 +244,7 @@ func _physics_process(delta):
 	if is_sliding:
 		slide_timer -= delta
 
-		# allow cancelling by pressing opposite direction
-		if input_dir != 0 and input_dir != slide_direction:
-			is_sliding = false
+
 
 		# decelerate
 		move_speed_current = lerpf(
@@ -296,7 +285,7 @@ func _physics_process(delta):
 		target_speed = base_speed
 
 	# Detect direction change
-	velocity_dir = signi(velocity.x)
+	velocity_dir = sign(velocity.x)
 
 	# --------------------------------
 	# DIRECTION SWITCH (GROUND)

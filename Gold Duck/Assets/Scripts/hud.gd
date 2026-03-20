@@ -10,7 +10,7 @@ var stopwatch : Stopwatch
 func _ready() -> void:
 	stopwatch = get_tree().get_first_node_in_group("stopwatch")
 	
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	update_stopwatch_label()
 	
 func update_stopwatch_label():
