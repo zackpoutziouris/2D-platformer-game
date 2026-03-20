@@ -82,7 +82,10 @@ var slide_direction := 0
 
 # Dive
 @export var dive_speed := 600
+
 var is_diving := false
+var last_down_tap_time := 0.0
+var down_double_tap_window := 0.25
 
 # Direction
 var facing := 1
@@ -94,11 +97,20 @@ var velocity_dir : int = 1
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func _input(event):
-	# Handle jumping down from a see through platform utilizing masks
+	# Handle jump down
 	if event.is_action_pressed("move_down"):
 		set_collision_mask_value(10, false)
 	else:		
 		set_collision_mask_value(10, true)
+	
+	# Handle double tapping S
+	if event.is_action_pressed("move_down"):
+		var now = Time.get_ticks_msec() / 1000.0
+
+		if now - last_down_tap_time < down_double_tap_window and !is_on_floor():
+			start_dive()
+
+		last_down_tap_time = now
 
 func _physics_process(delta):
 	update_dash_cooldown(delta)
@@ -123,11 +135,17 @@ func _physics_process(delta):
 	if update_dash(delta):
 		return
 	
-	if update_dive(delta): 
+	# ----- DIVE -----
+	if is_diving:
+		velocity.x = 0
+		velocity.y = dive_speed
+
+		move_and_slide()
+
+		if is_on_floor():
+			is_diving = false
+
 		return
-	
-	# ----- DIVE INPUT -----
-	handle_dive_input()
 
 	# ----- GRAVITY -----
 	apply_gravity(delta)
@@ -494,10 +512,6 @@ func start_slide():
 	move_speed_current *= slide_boost_multiplier
 
 # ---- DIVE FUNCTIONS ----
-func handle_dive_input():
-	if Input.is_action_just_pressed("move_down") and !is_on_floor() and !is_diving:
-		start_dive()
-
 func start_dive():
 	if is_on_floor():
 		return
@@ -511,28 +525,6 @@ func start_dive():
 
 	velocity.x = 0
 	move_speed_current = 0
-	
-func update_dive(delta)-> bool:
-	if !is_diving:
-		return false
-	
-	apply_dive_motion()
-	move_and_slide()
-	
-	if should_end_dive():
-		end_dive()
-	
-	return true
-	
-func apply_dive_motion():
-	velocity.x = 0
-	velocity.y = dive_speed
-	
-func should_end_dive() -> bool:
-	return is_on_floor()
-
-func end_dive():
-	is_diving = false
 	
  # ---- TP TO NEXT LEVEL FUNCTIONS ----
 func teleport_to_location(new_location):
