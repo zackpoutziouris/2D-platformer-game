@@ -167,7 +167,25 @@ func _physics_process(delta):
 		return
 
 	# ----- GRAVITY -----
-	apply_gravity(delta)
+	if not is_on_floor():
+		if velocity.y < 0:
+			if is_crouch_jump:
+				# Always full jump height
+				velocity.y += gravity * delta
+			else:
+				if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
+					velocity.y += gravity * jump_hold_gravity_scale * delta
+					jump_hold_timer += delta
+				else:
+					velocity.y += gravity * jump_cut_gravity_scale * delta
+		else:
+			if is_gliding:
+				velocity.y += gravity * delta
+				
+				if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
+					velocity.y = glide_fall_speed
+			else: 
+				velocity.y += gravity * delta
 
 	# ----- RESET JUMPS -----
 	if is_on_floor():
@@ -314,38 +332,6 @@ func _physics_process(delta):
 
 	move_and_slide()
 
-func apply_gravity(delta):
-	if is_on_floor():
-		return
-	
-	if velocity.y < 0:
-		apply_jump_gravity(delta)
-	else:
-		apply_fall_gravity(delta)
-
-func apply_jump_gravity(delta):
-	# Crouch jump ignores variable height
-	if is_crouch_jump:
-		velocity.y += gravity * delta
-		return
-
-	# Variable jump height (hold vs release)
-	if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
-		velocity.y += gravity * jump_hold_gravity_scale * delta
-		jump_hold_timer += delta
-	else:
-		velocity.y += gravity * jump_cut_gravity_scale * delta
-		
-func apply_fall_gravity(delta):
-	velocity.y += gravity * delta
-	
-	if is_gliding:
-		apply_glide_limiter()
-		
-func apply_glide_limiter():
-	if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
-		velocity.y = glide_fall_speed
-
 func handle_jump_input():
 	if !Input.is_action_just_pressed("jump"):
 		return
@@ -362,6 +348,7 @@ func apply_bhop():
 		bhop_stacks = 0
 
 func apply_jump():
+
 	if jumps_used >= max_jumps:
 		return
 
@@ -411,7 +398,7 @@ func apply_jump():
 			
 func update_jump_state():
 	# Ledge fall counts as first jump
-	if !is_on_floor() and jumps_used == 0:
+	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
 		jumps_used = 1
 
 	# Reset on landing
