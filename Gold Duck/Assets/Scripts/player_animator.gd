@@ -9,7 +9,7 @@ func play_if_not(anim: String):
 	if animation_player.current_animation != anim:
 		animation_player.play(anim)
 
-func _process(delta):
+func _process(_delta):
 	animation_player.speed_scale = 1.0
 	
 	# --- Flip sprite ---

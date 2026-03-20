@@ -19,8 +19,8 @@ func time_to_string() -> String:
 	# Turn the time var into a string for UI display
 	var msec = fmod(time, 1) * 1000
 	var sec = fmod(time, 60)
-	var min = time / 60 
+	var minutes = time / 60 
 	# Format time to look like this: 00:00:000
 	var format_string = "%02d : %02d : %02d"
-	var actual_string = format_string % [min, sec, msec]
+	var actual_string = format_string % [minutes, sec, msec]
 	return actual_string
