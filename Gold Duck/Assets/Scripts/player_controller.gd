@@ -132,8 +132,23 @@ func _physics_process(delta):
 	# ----- GRAVITY -----
 	apply_gravity(delta)
 
-	# ----- RESET MECHANICS WHEN TOUCHING THE FLOOR AGAIN -----
-	handle_ground_resets()
+	# ----- RESET JUMPS -----
+	if is_on_floor():
+		dashes_used = 0
+		locked_air_direction = 0
+
+		if is_crouch_jump:
+			# Hard stop horizontal momentum from crouch jump
+			velocity.x = 0.0
+			move_speed_current = 0.0
+			
+		if is_on_floor() and input_dir == 0 and !is_sliding:
+			move_speed_current = 0.0
+
+		is_crouch_jump = false
+		
+
+	handle_bhop_reset()
 
 	# ----- JUMP INPUT -----
 	handle_jump_input()
@@ -263,29 +278,6 @@ func _physics_process(delta):
 	move_and_slide()
 
 
-# ---- RESET FUNCTION WHEN TOUCHING THE GROUND ----
-func handle_ground_resets():
-	if !is_on_floor():
-		return
-	
-	reset_dash_state()
-	reset_air_direction()
-	reset_crouch_jump_state()
-	reset_double_jump_state()
-	handle_bhop_reset()
-	apply_ground_idle_stop()
-
-# ---- RESET AIR DIRECTION ----
-func reset_air_direction():
-	locked_air_direction = 0
-
-# ---- STOP MOVING WHEN NOT INPUTTING ANYTHING ----
-func apply_ground_idle_stop():
-	if input_dir == 0 and !is_sliding and move_speed_current > 5:
-		move_speed_current *= 1.05
-	if move_speed_current < 5:
-		move_speed_current = 0
-
 # ---- GRAVITY FUNCTIONS ----
 func apply_gravity(delta):
 	if is_on_floor():
@@ -396,20 +388,10 @@ func update_jump_state():
 	if !is_on_floor() and jumps_used == 0:
 		jumps_used = 1
 
-func reset_double_jump_state():
+	# Reset on landing
 	if is_on_floor():
 		jumps_used = 0
 		did_double_jump = false
-
-# ---- CROUCH FUNCTIONS ----
-func reset_crouch_jump_state():
-	if !is_crouch_jump:
-		return
-	
-	# Hard stop horizontal momentum from a crouch jump
-	velocity.x = 0.0
-	move_speed_current = 0.0
-	is_crouch_jump = false
 
 # ---- BHOP FUNCTIONS ----
 func apply_bhop():
@@ -500,9 +482,6 @@ func can_dash() -> bool:
 
 	# Air dash limited
 	return dashes_used < max_air_dashes
-
-func reset_dash_state():
-	dashes_used = 0
 
 # ---- SLIDE FUNCTIONS ---- 
 func start_slide():
