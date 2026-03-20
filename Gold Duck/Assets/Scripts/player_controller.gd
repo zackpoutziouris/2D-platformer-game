@@ -71,9 +71,10 @@ var sprinting : bool = false
 var target_speed = 1
 
 # Slide
-@export var slide_boost_multiplier := 2
-@export var slide_duration := 0.6
+@export var slide_boost_multiplier := 5
+@export var slide_duration := 1
 @export var slide_decel := 5
+
 var is_sliding := false
 var slide_timer := 0.0
 var slide_direction := 0
@@ -550,11 +551,16 @@ func update_slide(delta) -> bool:
 
 func apply_slide_physics(delta):
 	slide_timer -= delta
-
+	
+	handle_slide_cancel_input()
 	apply_slide_deceleration(delta)
 	apply_slide_velocity()
 	
 	move_and_slide()
+
+func handle_slide_cancel_input():
+	if input_dir != 0 and input_dir != slide_direction:
+		end_slide()
 
 func apply_slide_deceleration(delta):
 	move_speed_current = lerpf(
