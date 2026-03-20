@@ -127,6 +127,9 @@ func _physics_process(delta):
 	handle_bhop_landing()
 
 	was_on_floor = is_on_floor()
+	
+	if bhop_window_timer > 0:
+		bhop_window_timer -= 1
 		
 	# ----- DASH INPUT -----
 	handle_dash_input()
