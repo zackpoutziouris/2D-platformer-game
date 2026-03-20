@@ -2,90 +2,89 @@ extends CharacterBody2D
 class_name PlayerController
 
 # Base movement
-@export var speed :float = 4.0
-@export var jump_power :float = 9.0
-@export var camera :Camera2D
-@export var air_control_when_change_direction :float = 0.8
-var speed_multiplier :float = 30
-var jump_multiplier :float = -30
-var jump_force :float = 0.0
-var base_speed :float = 0.0
-var move_speed_current:float = 0.0
-var air_control :float = 0.0
+@export var speed: float = 4
+@export var jump_power: float = 9
+@export var camera : Camera2D
+@export var air_control_when_change_direction : float = 0.8
+var speed_multiplier: float = 30
+var jump_multiplier: float = -30
+var direction = 0
+var jump_force = 0.0
+var base_speed = 1
+var move_speed_current : float = 0.0
 
 # Variable jump tuning
-@export var jump_hold_gravity_scale :float = 0.6
-@export var jump_cut_gravity_scale:float = 2.2
-@export var max_jump_hold_time :float = 0.25
-var jump_hold_timer :float = 0.0
+@export var jump_hold_gravity_scale : float = 0.6
+@export var jump_cut_gravity_scale : float = 2.2
+@export var max_jump_hold_time : float = 0.25
+var jump_hold_timer : float = 0.0
 
 # Double jump
-var jumps_used :float = 0.0
-var max_jumps :float = 2.0
-var did_double_jump :bool = false
-var locked_air_direction :float = 0.0
+var jumps_used := 0
+var max_jumps := 2   # jump + double jump
+var did_double_jump := false
+var locked_air_direction: int = 0
 
 # Glide
-@export var glide_fall_speed :float = 70.0
-@export var fall_speed_limit_for_glide_to_work :float = 500.0
-@export var glide_walk_control :float = 1.0
-var is_gliding :bool = false
+@export var glide_fall_speed := 70
+@export var fall_speed_limit_for_glide_to_work := 500
+@export var glide_walk_control := 1.0
+var is_gliding := false
 
 # B-Hop system
-@export var bhop_window_frames :float = 6.0
-@export var bhop_horizontal_boosts :Array[float] = [2, 2.5, 3]
-@export var bhop_vertical_boosts :Array[float] = [2, 2.5, 3]
-@export var bhop_max_stacks :float = 3.0
-var bhop_window_timer :float = 0.0
-var bhop_stacks :float = 0.0
-var was_on_floor :bool = false
+@export var bhop_window_frames := 6
+@export var bhop_horizontal_boosts := [2, 2.5, 3]
+@export var bhop_vertical_boosts := [2, 2.5, 3]
+@export var bhop_max_stacks := 3
+var bhop_window_timer := 0
+var bhop_stacks := 0
+var was_on_floor := false
 
 # Dash system
-@export var dash_distance :float = 65
-@export var dash_time :float = 0.12
-@export var dash_cooldown :float = 0.25
-var is_dashing :bool = false
-var dash_timer :float = 0.0
-var dash_direction :float = 1.0
-var dash_cooldown_timer :float = 0.0
-var dash_speed :float = 0.0
-var dashes_used :float = 0.0
-var max_air_dashes :float = 1.0
-var dash_motion :Vector2 = Vector2.ZERO
+@export var dash_distance := 65
+@export var dash_time := 0.12
+@export var dash_cooldown := 0.25
+var is_dashing := false
+var dash_timer := 0.0
+var dash_direction := 1
+var dash_cooldown_timer := 0.0
+var dash_speed := 0.0
+var dashes_used := 0
+var max_air_dashes := 1
+var dash_motion : Vector2 = Vector2.ZERO
 
 # Crouch
-@export var crouch_speed_multiplier :float = 0.5
-@export var crouch_jump_multiplier :float = 1.42
-@export var crouch_hop_multiplier :float = 0.5
-@export var crouch_jump_back_boost :float = 1
-var is_crouching :bool = false
-var is_crouch_jump :bool = false
-var horizontal_jump_override :bool = false
+@export var crouch_speed_multiplier : float = 0.5
+@export var crouch_jump_multiplier : float = 1.42
+@export var crouch_hop_multiplier : float = 0.5
+@export var crouch_jump_back_boost : float = 1
+var is_crouching : bool = false
+var is_crouch_jump : bool = false
 
 # Sprint
-@export var sprint_multiplier :float = 1.6
-@export var sprint_accel :float = 6.0
-@export var ground_decel :float = 14.0
-var sprinting :bool = false
-var target_speed :float = 0.0
+@export var sprint_multiplier : float = 1.6
+@export var sprint_accel : float = 6.0
+@export var ground_decel : float = 14.0
+var sprinting : bool = false
+var target_speed = 1
 
 # Slide
-@export var slide_boost_multiplier :float = 2
-@export var slide_duration :float = 0.5
-@export var slide_decel :float = 5
-var is_sliding :bool = false
-var slide_timer :float = 0.0
-var slide_direction :float = 0.0
+@export var slide_boost_multiplier := 2
+@export var slide_duration := 0.5
+@export var slide_decel := 5
+var is_sliding := false
+var slide_timer := 0.0
+var slide_direction := 0
 
 # Dive
-@export var dive_speed :float = 600
-var is_diving :bool = false
+@export var dive_speed := 600
+var is_diving := false
 
 # Direction
-var facing :float = 1.0
-var previous_facing :float = 1.0
-var input_dir :int = 0
-var input_axis :float = 0.0
+var facing := 1
+var previous_facing := 1
+var input_dir : int = 0.0
+var velocity_dir : int = 1
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -120,7 +119,7 @@ func _physics_process(delta):
 	if update_dash(delta):
 		return
 	
-	if update_dive():
+	if update_dive(delta):
 		return
 
 	# ---- PHYSICS ----
@@ -242,6 +241,7 @@ func apply_jump():
 		return
 
 	jump_force = jump_power * jump_multiplier
+	var horizontal_jump_override := false
 
 	# ----- CROUCH JUMP -----
 	if try_crouch_jump():
@@ -339,15 +339,15 @@ func update_sprint_state():
 	if can_sprint():
 		sprinting = (
 			Input.is_action_pressed("sprint")
-			and input_axis != 0
+			and direction != 0
 		)
 	else:
 		sprinting = false
 
 # ---- HORIZONTAL MOVEMENT FUNCTIONS ---- 
 func handle_horizontal_movement_input():
-	input_axis = Input.get_axis("move_left", "move_right")
-	input_dir = sign(input_axis)
+	direction = Input.get_axis("move_left", "move_right")
+	input_dir = signi(direction)
 	
 func calculate_target_speed():
 	base_speed = speed * speed_multiplier
@@ -359,8 +359,10 @@ func calculate_target_speed():
 		target_speed *= sprint_multiplier
 		
 func handle_direction_switch():
+	velocity_dir = signi(velocity.x)
+
 	# Ground switch
-	if is_on_floor() and input_dir != 0 and sign(velocity.x) != 0 and input_dir != sign(velocity.x):
+	if is_on_floor() and input_dir != 0 and velocity_dir != 0 and input_dir != velocity_dir:
 		move_speed_current *= 0.25
 		sprinting = false
 
@@ -370,7 +372,7 @@ func handle_direction_switch():
 		move_speed_current *= 0.35
 		
 func apply_horizontal_acceleration(delta):
-	if input_axis != 0:
+	if direction != 0:
 		if is_on_floor():
 			move_speed_current = lerpf(
 				move_speed_current,
@@ -380,7 +382,7 @@ func apply_horizontal_acceleration(delta):
 		else:
 			if not is_crouch_jump:
 
-				air_control = air_control_when_change_direction
+				var air_control = air_control_when_change_direction
 
 				if is_gliding:
 					air_control = glide_walk_control
@@ -580,7 +582,7 @@ func start_dive():
 	velocity.x = 0
 	move_speed_current = 0
 	
-func update_dive()-> bool:
+func update_dive(delta)-> bool:
 	if !is_diving:
 		return false
 	
