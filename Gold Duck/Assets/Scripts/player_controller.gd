@@ -87,7 +87,7 @@ var is_diving := false
 var last_down_tap_time := 0.0
 var down_double_tap_window := 0.25
 
-# Direction
+# Directiond
 var facing := 1
 var previous_facing := 1
 var input_dir : int = 0
@@ -97,15 +97,8 @@ var velocity_dir : int = 1
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func _input(event):
-	# Handle jump down
-	if event.is_action_pressed("move_down"):
-		set_collision_mask_value(10, false)
-	else:		
-		set_collision_mask_value(10, true)
-	
-	# Handle double tapping S
-	if event.is_action_pressed("move_down") and !is_on_floor():
-		start_dive()
+	move_down_platform(event)
+	dive(event)
 
 func _physics_process(delta):
 	if dash_cooldown_timer > 0:
@@ -340,6 +333,23 @@ func _physics_process(delta):
 
 	move_and_slide()
 
+
+
+
+
+# ---- Player Mechanics ---- 
+func move_down_platform(event):
+	# Handle jump down
+	if event.is_action_pressed("move_down"):
+		set_collision_mask_value(10, false)
+	else:		
+		set_collision_mask_value(10, true)
+		
+func dive(event):
+	# Player dive
+	if event.is_action_pressed("move_down") and !is_on_floor():
+		start_dive()
+
 func perform_jump():
 
 	if jumps_used >= max_jumps:
@@ -440,6 +450,7 @@ func start_dive():
 	velocity.x = 0
 	move_speed_current = 0
 
+# ---- Additional level mechanics ----
 func teleport_to_location(new_location):
 	position =  new_location
 	camera.reset_smoothing()
