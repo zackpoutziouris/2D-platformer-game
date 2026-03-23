@@ -103,45 +103,17 @@ func _input(event):
 func _physics_process(delta):
 	dash_timer_check(delta)
 	bhop_timer_check()
-	
+
 	reset_on_player_touch_ground()
-	
+
 	movement_input_left_right()
 	glide_input()
 	dash_input()
-	
-	# ----- JUMP INPUT -----
-	if Input.is_action_just_pressed("jump"):
-		# ----- B-HOP CHECK -----
-		if bhop_window_timer > 0 and abs(move_speed_current) > 5:
-			
-			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
+	jump_input()
+	slide_input()
+	crouch_input()
+	sprint_input()
 
-			var stack_index = bhop_stacks - 1
-
-			move_speed_current *= bhop_horizontal_boosts[stack_index]
-			velocity.y *= bhop_vertical_boosts[stack_index]
-
-		else:
-			bhop_stacks = 0
-
-		perform_jump()
-	
-	# ----- SLIDE INPUT -----
-	if Input.is_action_just_pressed("crouch") and sprint_momentum and is_on_floor() and !is_sliding and abs(velocity.x) > 150:
-		perform_slide()
-	
-	# ----- CROUCH INPUT -----
-	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
-	
-	# ----- SPRINT INPUT -----
-	if is_on_floor():
-		sprint_momentum = (
-			Input.is_action_pressed("sprint")
-			and direction != 0
-			and !is_crouching
-		)
-	
 	# ----- DASH -----
 	if is_dashing:
 		dash_timer -= delta
@@ -303,51 +275,6 @@ func _physics_process(delta):
 
 
 # ---- Player Mechanics ---- 
-func move_down_platform_input_and_action(event):
-	# Handle jump down
-	if event.is_action_pressed("move_down"):
-		set_collision_mask_value(10, false)
-	else:		
-		set_collision_mask_value(10, true)
-		
-func dive_input(event):
-	# Player dive
-	if event.is_action_pressed("move_down") and !is_on_floor():
-		perform_dive()
-		
-func dash_timer_check(delta):
-	if dash_cooldown_timer > 0:
-		dash_cooldown_timer -= delta
-
-func bhop_timer_check():
-	if bhop_window_timer > 0:
-		bhop_window_timer -= 1
-		
-	# Detect landing
-	if is_on_floor() and !was_on_floor:
-		bhop_window_timer = bhop_window_frames
-		
-	was_on_floor = is_on_floor()
-		
-func movement_input_left_right():
-	# ----- MOVEMENT -----
-	direction = Input.get_axis("move_left", "move_right")
-	input_dir = signi(direction)
-	
-func glide_input():
-	# ----- GLIDE INPUT -----
-	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
-		is_gliding = true
-		is_crouch_jump = false
-		locked_air_direction = 0
-	else:
-		is_gliding = false
-
-func dash_input():
-	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
-		perform_dash()
-		
 func reset_on_player_touch_ground():
 	# ----- RESET JUMPS -----
 	if is_on_floor():
@@ -368,6 +295,87 @@ func reset_on_player_touch_ground():
 		
 		if is_on_floor() and abs(move_speed_current) < 5:
 			bhop_stacks = 0
+
+func move_down_platform_input_and_action(event):
+	# Handle jump down
+	if event.is_action_pressed("move_down"):
+		set_collision_mask_value(10, false)
+	else:		
+		set_collision_mask_value(10, true)
+
+func dive_input(event):
+	# Player dive
+	if event.is_action_pressed("move_down") and !is_on_floor():
+		perform_dive()
+
+func dash_timer_check(delta):
+	if dash_cooldown_timer > 0:
+		dash_cooldown_timer -= delta
+
+func bhop_timer_check():
+	if bhop_window_timer > 0:
+		bhop_window_timer -= 1
+		
+	# Detect landing
+	if is_on_floor() and !was_on_floor:
+		bhop_window_timer = bhop_window_frames
+		
+	was_on_floor = is_on_floor()
+
+func movement_input_left_right():
+	# ----- MOVEMENT -----
+	direction = Input.get_axis("move_left", "move_right")
+	input_dir = signi(direction)
+
+func glide_input():
+	# ----- GLIDE INPUT -----
+	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
+		is_gliding = true
+		is_crouch_jump = false
+		locked_air_direction = 0
+	else:
+		is_gliding = false
+
+func dash_input():
+	# ----- DASH INPUT -----
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
+		perform_dash()
+
+func jump_input():
+	# ----- JUMP INPUT -----
+	if Input.is_action_just_pressed("jump"):
+		# ----- B-HOP CHECK -----
+		if bhop_window_timer > 0 and abs(move_speed_current) > 5:
+			
+			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
+
+			var stack_index = bhop_stacks - 1
+
+			move_speed_current *= bhop_horizontal_boosts[stack_index]
+			velocity.y *= bhop_vertical_boosts[stack_index]
+
+		else:
+			bhop_stacks = 0
+
+		perform_jump()
+
+func slide_input():
+	# ----- SLIDE INPUT -----
+	if Input.is_action_just_pressed("crouch") and sprint_momentum and is_on_floor() and !is_sliding and abs(velocity.x) > 150:
+		perform_slide()
+
+func crouch_input():
+	# ----- CROUCH INPUT -----
+	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
+
+func sprint_input():
+	# ----- SPRINT INPUT -----
+	if is_on_floor():
+		sprint_momentum = (
+			Input.is_action_pressed("sprint")
+			and direction != 0
+			and !is_crouching
+		)
 
 func perform_jump():
 	if jumps_used >= max_jumps:
@@ -432,7 +440,7 @@ func perform_dash():
 
 	if !is_on_floor():
 		dashes_used += 1
-	
+
 func can_dash() -> bool:
 	if dash_cooldown_timer > 0:
 		return false
