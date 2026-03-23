@@ -116,26 +116,7 @@ func _physics_process(delta):
 	finish_dash(delta)
 	finish_dive()
 
-	# ----- GRAVITY -----
-	if not is_on_floor():
-		if velocity.y < 0:
-			if is_crouch_jump:
-				# Always full jump height
-				velocity.y += gravity * delta
-			else:
-				if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
-					velocity.y += gravity * jump_hold_gravity_scale * delta
-					jump_hold_timer += delta
-				else:
-					velocity.y += gravity * jump_cut_gravity_scale * delta
-		else:
-			if is_gliding:
-				velocity.y += gravity * delta
-				
-				if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
-					velocity.y = glide_fall_speed
-			else: 
-				velocity.y += gravity * delta
+	gravity_and_variable_timed_jumps(delta)
 
 
 	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
@@ -145,8 +126,6 @@ func _physics_process(delta):
 	# ----- SLIDE MOVEMENT -----
 	if is_sliding:
 		slide_timer -= delta
-
-
 
 		# decelerate
 		move_speed_current = lerpf(
@@ -347,6 +326,28 @@ func sprint_input():
 			and direction != 0
 			and !is_crouching
 		)
+
+func gravity_and_variable_timed_jumps(delta):
+	# ----- GRAVITY -----
+	if not is_on_floor():
+		if velocity.y < 0:
+			if is_crouch_jump:
+				# Always full jump height
+				velocity.y += gravity * delta
+			else:
+				if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
+					velocity.y += gravity * jump_hold_gravity_scale * delta
+					jump_hold_timer += delta
+				else:
+					velocity.y += gravity * jump_cut_gravity_scale * delta
+		else:
+			if is_gliding:
+				velocity.y += gravity * delta
+				
+				if velocity.y > glide_fall_speed and velocity.y < fall_speed_limit_for_glide_to_work:
+					velocity.y = glide_fall_speed
+			else: 
+				velocity.y += gravity * delta
 
 func perform_jump():
 	if jumps_used >= max_jumps:
