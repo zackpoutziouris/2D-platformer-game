@@ -67,7 +67,6 @@ var is_crouch_jump : bool = false
 @export var sprint_multiplier : float = 1.6
 @export var sprint_accel : float = 6.0
 @export var ground_decel : float = 14.0
-var is_sprinting : bool = false
 var sprint_momentum : bool = false
 var target_speed = 1
 
@@ -81,7 +80,7 @@ var slide_timer := 0.0
 var slide_direction := 0
 
 # Dive
-@export var dive_speed := 400
+@export var dive_speed := 165
 
 var is_diving := false
 var last_down_tap_time := 0.0
@@ -114,30 +113,8 @@ func _physics_process(delta):
 	crouch_input()
 	sprint_input()
 
-	# ----- DASH -----
-	if is_dashing:
-		dash_timer -= delta
-
-		dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
-		move_and_collide(dash_motion)
-
-		if dash_timer <= 0:
-			is_dashing = false
-			dash_cooldown_timer = dash_cooldown
-
-		return
-	
-	# ----- DIVE -----
-	if is_diving:
-		velocity.x = 0
-		velocity.y = dive_speed
-
-		move_and_slide()
-
-		if is_on_floor():
-			is_diving = false
-
-		return
+	finish_dash(delta)
+	finish_dive()
 
 	# ----- GRAVITY -----
 	if not is_on_floor():
@@ -160,16 +137,11 @@ func _physics_process(delta):
 			else: 
 				velocity.y += gravity * delta
 
-	
 
 	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
 		jumps_used = 1
 
-	
-		
-	is_sprinting = sprint_momentum
-		
 	# ----- SLIDE MOVEMENT -----
 	if is_sliding:
 		slide_timer -= delta
@@ -201,7 +173,6 @@ func _physics_process(delta):
 	
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
 		sprint_momentum = false
-		is_sprinting = false
 		move_speed_current *= 0.35
 	
 	base_speed = speed * speed_multiplier
@@ -306,7 +277,7 @@ func move_down_platform_input_and_action(event):
 func dive_input(event):
 	# Player dive
 	if event.is_action_pressed("move_down") and !is_on_floor():
-		perform_dive()
+		start_dive()
 
 func dash_timer_check(delta):
 	if dash_cooldown_timer > 0:
@@ -339,7 +310,7 @@ func glide_input():
 func dash_input():
 	# ----- DASH INPUT -----
 	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
-		perform_dash()
+		start_dash()
 
 func jump_input():
 	# ----- JUMP INPUT -----
@@ -424,7 +395,7 @@ func perform_jump():
 		if locked_air_direction != 0:
 			velocity.x = locked_air_direction * move_speed_current
 
-func perform_dash():
+func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
 	dash_direction = facing
@@ -437,9 +408,23 @@ func perform_dash():
 	locked_air_direction = 0
 	is_crouch_jump = false
 	jump_hold_timer = max_jump_hold_time
-
+	
 	if !is_on_floor():
 		dashes_used += 1
+
+func finish_dash(delta):
+	# ----- DASH -----
+	if is_dashing:
+		dash_timer -= delta
+		
+		dash_motion = Vector2(dash_direction * dash_speed * delta, 0)
+		move_and_collide(dash_motion)
+		
+		if dash_timer <= 0:
+			is_dashing = false
+			dash_cooldown_timer = dash_cooldown
+		
+		return
 
 func can_dash() -> bool:
 	if dash_cooldown_timer > 0:
@@ -461,19 +446,32 @@ func perform_slide():
 	move_speed_current = max(move_speed_current, base_speed * sprint_multiplier)
 	move_speed_current *= slide_boost_multiplier
 
-func perform_dive():
+func start_dive():
 	if is_on_floor():
 		return
-
+	
 	is_diving = true
-
+	
 	# cancel existing movement
 	is_sliding = false
 	is_dashing = false
 	is_gliding = false
-
+	
 	velocity.x = 0
 	move_speed_current = 0
+
+func finish_dive():
+	# ----- DIVE -----
+	if is_diving:
+		velocity.x = 0
+		velocity.y = dive_speed
+		
+		move_and_slide()
+		
+		if is_on_floor():
+			is_diving = false
+			
+		return
 
 # ---- Additional level mechanics ----
 func teleport_to_location(new_location):

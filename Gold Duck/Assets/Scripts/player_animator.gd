@@ -80,7 +80,7 @@ func _process(_delta):
 	if abs(player_controller.velocity.x) > 3 && player_controller.velocity.y == 0:
 
 		# Speed up animation if sprinting
-		if player_controller.is_sprinting:
+		if player_controller.sprint_momentum:
 			animation_player.speed_scale = sprint_anim_speed
 
 		play_if_not("walk")
