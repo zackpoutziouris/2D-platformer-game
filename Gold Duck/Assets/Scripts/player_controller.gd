@@ -102,11 +102,9 @@ func _input(event):
 
 func _physics_process(delta):
 	dash_timer_check(delta)
-	bhop_timer_check(delta)
+	bhop_timer_check()
 	
-	# ----- MOVEMENT -----
-	direction = Input.get_axis("move_left", "move_right")
-	input_dir = signi(direction)
+	movement_input()
 	
 	# ----- GLIDE INPUT -----
 	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
@@ -351,9 +349,14 @@ func dash_timer_check(delta):
 	if dash_cooldown_timer > 0:
 		dash_cooldown_timer -= delta
 
-func bhop_timer_check(delta):
+func bhop_timer_check():
 	if bhop_window_timer > 0:
 		bhop_window_timer -= 1
+		
+func movement_input():
+	# ----- MOVEMENT -----
+	direction = Input.get_axis("move_left", "move_right")
+	input_dir = signi(direction)
 
 func perform_jump():
 
