@@ -101,8 +101,8 @@ func _input(event):
 	dive(event)
 
 func _physics_process(delta):
-	if dash_cooldown_timer > 0:
-		dash_cooldown_timer -= delta
+	dash_timer_check(delta)
+	bhop_timer_check(delta)
 	
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
@@ -121,9 +121,6 @@ func _physics_process(delta):
 		bhop_window_timer = bhop_window_frames
 
 	was_on_floor = is_on_floor()
-	
-	if bhop_window_timer > 0:
-		bhop_window_timer -= 1
 		
 	# ----- DASH INPUT -----
 	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
@@ -349,6 +346,14 @@ func dive(event):
 	# Player dive
 	if event.is_action_pressed("move_down") and !is_on_floor():
 		start_dive()
+		
+func dash_timer_check(delta):
+	if dash_cooldown_timer > 0:
+		dash_cooldown_timer -= delta
+
+func bhop_timer_check(delta):
+	if bhop_window_timer > 0:
+		bhop_window_timer -= 1
 
 func perform_jump():
 
