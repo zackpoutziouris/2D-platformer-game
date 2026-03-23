@@ -105,24 +105,8 @@ func _physics_process(delta):
 	bhop_timer_check()
 	
 	movement_input()
-	
-	# ----- GLIDE INPUT -----
-	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
-		is_gliding = true
-		is_crouch_jump = false
-		locked_air_direction = 0
-	else:
-		is_gliding = false
-	
-	# Detect landing
-	if is_on_floor() and !was_on_floor:
-		bhop_window_timer = bhop_window_frames
-
-	was_on_floor = is_on_floor()
-		
-	# ----- DASH INPUT -----
-	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
-		start_dash()
+	glide_input()
+	dash_input()
 	
 	# ----- DASH -----
 	if is_dashing:
@@ -353,10 +337,30 @@ func bhop_timer_check():
 	if bhop_window_timer > 0:
 		bhop_window_timer -= 1
 		
+	# Detect landing
+	if is_on_floor() and !was_on_floor:
+		bhop_window_timer = bhop_window_frames
+		
+	was_on_floor = is_on_floor()
+		
 func movement_input():
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
 	input_dir = signi(direction)
+	
+func glide_input():
+	# ----- GLIDE INPUT -----
+	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
+		is_gliding = true
+		is_crouch_jump = false
+		locked_air_direction = 0
+	else:
+		is_gliding = false
+
+func dash_input():
+	# ----- DASH INPUT -----
+	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
+		start_dash()
 
 func perform_jump():
 
