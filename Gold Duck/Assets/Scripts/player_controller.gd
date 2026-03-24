@@ -130,30 +130,6 @@ func _physics_process(delta):
 	handle_air_direction_penalty()
 	calculate_target_speed()
 	handle_ground_direction_switch(delta)
-	
-	#if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
-		#sprint_momentum = false
-		#move_speed_current *= 0.35
-	#
-	#base_speed = speed * speed_multiplier
-	#target_speed = base_speed
-#
-	#if is_crouching:
-		#target_speed *= crouch_speed_multiplier
-	#elif sprint_momentum:
-		#target_speed *= sprint_multiplier
-	#elif is_gliding:
-		#target_speed = base_speed
-#
-	## Detect direction change
-	#velocity_dir = sign(velocity.x)
-#
-	## --------------------------------
-	## DIRECTION SWITCH (GROUND)
-	## --------------------------------
-	#if is_on_floor() and input_dir != 0 and velocity_dir != 0 and input_dir != velocity_dir:
-		#move_speed_current *= 0.25   # heavy speed loss
-		#sprint_momentum = false      # must rebuild sprint
 
 	# --------------------------------
 	# ACCELERATION (GROUND)
