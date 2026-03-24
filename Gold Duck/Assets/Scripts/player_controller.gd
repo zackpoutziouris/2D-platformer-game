@@ -86,11 +86,13 @@ var is_diving := false
 var last_down_tap_time := 0.0
 var down_double_tap_window := 0.25
 
-# Directiond
+# Direction
 var facing := 1
 var previous_facing := 1
 var input_dir : int = 0
 var velocity_dir : int = 1
+var direction_switch_timer := 0.0
+@export var direction_switch_duration := 0.1
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -119,42 +121,39 @@ func _physics_process(delta):
 	
 	if update_slide(delta):
 		return
-
+	
 	gravity_and_variable_timed_jumps(delta)
-
 	
-	
-	# ------------------------------------------------
-	# CROUCH JUMP LOCK (NO HORIZONTAL MODIFICATION)
-	# ------------------------------------------------
-	if is_crouch_jump and not is_on_floor():
-		velocity.x = locked_air_direction * move_speed_current
-		move_and_slide()
+	if update_crouch_jump_lock():
 		return
 	
-	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
-		sprint_momentum = false
-		move_speed_current *= 0.35
+	handle_air_direction_penalty()
+	calculate_target_speed()
+	handle_ground_direction_switch(delta)
 	
-	base_speed = speed * speed_multiplier
-	target_speed = base_speed
-
-	if is_crouching:
-		target_speed *= crouch_speed_multiplier
-	elif sprint_momentum:
-		target_speed *= sprint_multiplier
-	elif is_gliding:
-		target_speed = base_speed
-
-	# Detect direction change
-	velocity_dir = sign(velocity.x)
-
-	# --------------------------------
-	# DIRECTION SWITCH (GROUND)
-	# --------------------------------
-	if is_on_floor() and input_dir != 0 and velocity_dir != 0 and input_dir != velocity_dir:
-		move_speed_current *= 0.25   # heavy speed loss
-		sprint_momentum = false      # must rebuild sprint
+	#if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
+		#sprint_momentum = false
+		#move_speed_current *= 0.35
+	#
+	#base_speed = speed * speed_multiplier
+	#target_speed = base_speed
+#
+	#if is_crouching:
+		#target_speed *= crouch_speed_multiplier
+	#elif sprint_momentum:
+		#target_speed *= sprint_multiplier
+	#elif is_gliding:
+		#target_speed = base_speed
+#
+	## Detect direction change
+	#velocity_dir = sign(velocity.x)
+#
+	## --------------------------------
+	## DIRECTION SWITCH (GROUND)
+	## --------------------------------
+	#if is_on_floor() and input_dir != 0 and velocity_dir != 0 and input_dir != velocity_dir:
+		#move_speed_current *= 0.25   # heavy speed loss
+		#sprint_momentum = false      # must rebuild sprint
 
 	# --------------------------------
 	# ACCELERATION (GROUND)
@@ -383,6 +382,15 @@ func ledge_fall_check():
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
 		jumps_used = 1
 
+func update_crouch_jump_lock() -> bool:
+	if !is_crouch_jump or is_on_floor():
+		return false
+	
+	velocity.x = locked_air_direction * move_speed_current
+	move_and_slide()
+	
+	return true
+
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
@@ -481,6 +489,33 @@ func finish_dive():
 			is_diving = false
 			
 		return
+
+func handle_air_direction_penalty():
+	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
+		sprint_momentum = false
+		move_speed_current *= 0.35
+
+func handle_ground_direction_switch(delta):
+	#velocity_dir = sign(velocity.x)
+	
+	if is_on_floor() and input_dir != 0 and input_dir != previous_facing:
+		direction_switch_timer = direction_switch_duration
+		sprint_momentum = false
+	
+	if direction_switch_timer > 0:
+		direction_switch_timer -= delta
+		move_speed_current *= 0.35
+
+func calculate_target_speed():
+	base_speed = speed * speed_multiplier
+	target_speed = base_speed
+	
+	if is_crouching:
+		target_speed *= crouch_speed_multiplier
+	elif sprint_momentum:
+		target_speed *= sprint_multiplier
+	elif is_gliding:
+		target_speed = base_speed
 
 # ---- Additional level mechanics ----
 func teleport_to_location(new_location):
