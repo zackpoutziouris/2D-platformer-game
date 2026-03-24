@@ -131,50 +131,9 @@ func _physics_process(delta):
 	calculate_target_speed()
 	handle_ground_direction_switch(delta)
 
-	# --------------------------------
-	# ACCELERATION (GROUND)
-	# --------------------------------
-	if direction != 0:
-		if is_on_floor():
-			move_speed_current = lerpf(
-				move_speed_current,
-				target_speed,
-				clamp(sprint_accel * delta, 0.0, 1.0)
-			)
-		else:
-			if not is_crouch_jump:
-
-				var air_control = air_control_when_change_direction
-
-				if is_gliding:
-					air_control = glide_walk_control
-
-				if input_dir != 0:
-					locked_air_direction = input_dir
-					move_speed_current = lerpf(
-						move_speed_current,
-						base_speed,
-						clamp(sprint_accel * air_control * delta, 0.0, 1.0)
-					)
-
-		previous_facing = facing
-		if not is_crouch_jump:
-			facing = input_dir
-	else:
-		if is_on_floor():
-			move_speed_current = lerpf(
-				move_speed_current,
-				0.0,
-				clamp(ground_decel * delta, 0.0, 1.0)
-			)
-
-	# Apply velocity
-	if is_on_floor():
-		velocity.x = facing * move_speed_current
-	else:
-		if locked_air_direction != 0:
-			velocity.x = locked_air_direction * move_speed_current
-
+	handle_ground_acceleration(delta)
+	apply_horizontal_velocity()
+	
 	move_and_slide()
 
 
@@ -492,6 +451,52 @@ func calculate_target_speed():
 		target_speed *= sprint_multiplier
 	elif is_gliding:
 		target_speed = base_speed
+
+func handle_ground_acceleration(delta):
+	# --------------------------------
+	# ACCELERATION (GROUND)
+	# --------------------------------
+	if direction != 0:
+		if is_on_floor():
+			move_speed_current = lerpf(
+				move_speed_current,
+				target_speed,
+				clamp(sprint_accel * delta, 0.0, 1.0)
+			)
+		else:
+			if not is_crouch_jump:
+
+				var air_control = air_control_when_change_direction
+
+				if is_gliding:
+					air_control = glide_walk_control
+
+				if input_dir != 0:
+					locked_air_direction = input_dir
+					move_speed_current = lerpf(
+						move_speed_current,
+						base_speed,
+						clamp(sprint_accel * air_control * delta, 0.0, 1.0)
+					)
+
+		previous_facing = facing
+		if not is_crouch_jump:
+			facing = input_dir
+	else:
+		if is_on_floor():
+			move_speed_current = lerpf(
+				move_speed_current,
+				0.0,
+				clamp(ground_decel * delta, 0.0, 1.0)
+			)
+
+func apply_horizontal_velocity():
+	# Apply velocity
+	if is_on_floor():
+		velocity.x = facing * move_speed_current
+	else:
+		if locked_air_direction != 0:
+			velocity.x = locked_air_direction * move_speed_current
 
 # ---- Additional level mechanics ----
 func teleport_to_location(new_location):
