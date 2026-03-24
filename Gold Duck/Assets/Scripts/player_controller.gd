@@ -102,10 +102,11 @@ func _input(event):
 func _physics_process(delta):
 	dash_timer_check(delta)
 	bhop_timer_check()
-
+	ledge_fall_check()
+	
 	reset_on_player_touch_ground()
 
-	movement_input_left_right()
+	movement_left_right_input()
 	glide_input()
 	dash_input()
 	jump_input()
@@ -115,32 +116,13 @@ func _physics_process(delta):
 
 	finish_dash(delta)
 	finish_dive()
+	
+	if update_slide(delta):
+		return
 
 	gravity_and_variable_timed_jumps(delta)
 
-
-	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
-	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
-		jumps_used = 1
-
-	# ----- SLIDE MOVEMENT -----
-	if is_sliding:
-		slide_timer -= delta
-
-		# decelerate
-		move_speed_current = lerpf(
-			move_speed_current,
-			0.0,
-			clamp(slide_decel * delta, 0.0, 1.0)
-		)
-
-		velocity.x = slide_direction * move_speed_current
-		move_and_slide()
-
-		if slide_timer <= 0 or abs(move_speed_current) < 5:
-			is_sliding = false
-
-		return
+	
 	
 	# ------------------------------------------------
 	# CROUCH JUMP LOCK (NO HORIZONTAL MODIFICATION)
@@ -272,7 +254,7 @@ func bhop_timer_check():
 		
 	was_on_floor = is_on_floor()
 
-func movement_input_left_right():
+func movement_left_right_input():
 	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
 	input_dir = signi(direction)
@@ -396,6 +378,11 @@ func perform_jump():
 		if locked_air_direction != 0:
 			velocity.x = locked_air_direction * move_speed_current
 
+func ledge_fall_check():
+	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
+	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
+		jumps_used = 1
+
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
@@ -447,6 +434,27 @@ func perform_slide():
 	move_speed_current = max(move_speed_current, base_speed * sprint_multiplier)
 	move_speed_current *= slide_boost_multiplier
 
+func update_slide(delta) -> bool:
+	if !is_sliding:
+		return false
+	
+	slide_timer -= delta
+
+	# decelerate
+	move_speed_current = lerpf(
+		move_speed_current,
+		0.0,
+		clamp(slide_decel * delta, 0.0, 1.0)
+	)
+
+	velocity.x = slide_direction * move_speed_current
+	move_and_slide()
+
+	if slide_timer <= 0 or abs(move_speed_current) < 5:
+		is_sliding = false
+	
+	return true
+	
 func start_dive():
 	if is_on_floor():
 		return
