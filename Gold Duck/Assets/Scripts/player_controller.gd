@@ -2,10 +2,13 @@ extends CharacterBody2D
 class_name PlayerController
 
 # Base movement
-@export var speed: float = 4
+@export var speed : float = 4
+@export var max_move_speed : float = 500.0
 @export var jump_power: float = 9
 @export var camera : Camera2D
 @export var air_control_when_change_direction : float = 0.8
+@export var ground_accel : float = 6.0
+@export var ground_decel : float = 14.0
 var speed_multiplier: float = 30
 var jump_multiplier: float = -30
 var direction = 0
@@ -17,7 +20,6 @@ var move_speed_current : float = 0.0
 @export var jump_hold_gravity_scale : float = 0.6
 @export var jump_cut_gravity_scale : float = 2.2
 @export var max_jump_hold_time : float = 0.25
-
 var jump_hold_timer : float = 0.0
 
 # Double jump
@@ -33,11 +35,10 @@ var locked_air_direction: int = 0
 var is_gliding := false
 
 # B-Hop system
-@export var bhop_window_frames := 6
+@export var bhop_window_frames := 5
 @export var bhop_horizontal_boosts := [2, 2.5, 3]
 @export var bhop_vertical_boosts := [2, 2.5, 3]
 @export var bhop_max_stacks := 3
-
 var bhop_window_timer := 0
 var bhop_stacks := 0
 var was_on_floor := false
@@ -65,8 +66,6 @@ var is_crouch_jump : bool = false
 
 # Sprint
 @export var sprint_multiplier : float = 1.6
-@export var sprint_accel : float = 6.0
-@export var ground_decel : float = 14.0
 var sprint_momentum : bool = false
 var target_speed = 1
 
@@ -74,25 +73,23 @@ var target_speed = 1
 @export var slide_boost_multiplier := 1.7
 @export var slide_duration := 0.9
 @export var slide_decel := 5
-
 var is_sliding := false
 var slide_timer := 0.0
 var slide_direction := 0
 
 # Dive
 @export var dive_speed := 165
-
 var is_diving := false
 var last_down_tap_time := 0.0
 var down_double_tap_window := 0.25
 
 # Direction
+@export var direction_switch_duration := 0.1
 var facing := 1
 var previous_facing := 1
 var input_dir : int = 0
 var velocity_dir : int = 1
 var direction_switch_timer := 0.0
-@export var direction_switch_duration := 0.1
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -107,7 +104,9 @@ func _physics_process(delta):
 	ledge_fall_check()
 	
 	reset_on_player_touch_ground()
-
+	
+	gravity_and_variable_timed_jumps(delta)
+	
 	movement_left_right_input()
 	glide_input()
 	dash_input()
@@ -122,8 +121,6 @@ func _physics_process(delta):
 	if update_slide(delta):
 		return
 	
-	gravity_and_variable_timed_jumps(delta)
-	
 	if update_crouch_jump_lock():
 		return
 	
@@ -131,7 +128,7 @@ func _physics_process(delta):
 	calculate_target_speed()
 	handle_ground_direction_switch(delta)
 
-	handle_ground_acceleration(delta)
+	handle_acceleration_air_ground(delta)
 	apply_horizontal_velocity()
 	
 	move_and_slide()
@@ -142,17 +139,11 @@ func _physics_process(delta):
 
 # ---- Player Mechanics ---- 
 func reset_on_player_touch_ground():
-	# ----- RESET JUMPS -----
 	if is_on_floor():
 		jumps_used = 0
 		did_double_jump = false
 		dashes_used = 0
 		locked_air_direction = 0
-
-		if is_crouch_jump:
-			# Hard stop horizontal momentum from crouch jump
-			velocity.x = 0.0
-			move_speed_current = 0.0
 			
 		if is_on_floor() and input_dir == 0 and !is_sliding:
 			move_speed_current = 0.0
@@ -163,14 +154,12 @@ func reset_on_player_touch_ground():
 			bhop_stacks = 0
 
 func move_down_platform_input_and_action(event):
-	# Handle jump down
 	if event.is_action_pressed("move_down"):
 		set_collision_mask_value(10, false)
 	else:		
 		set_collision_mask_value(10, true)
 
 func dive_input(event):
-	# Player dive
 	if event.is_action_pressed("move_down") and !is_on_floor():
 		start_dive()
 
@@ -182,19 +171,16 @@ func bhop_timer_check():
 	if bhop_window_timer > 0:
 		bhop_window_timer -= 1
 		
-	# Detect landing
 	if is_on_floor() and !was_on_floor:
 		bhop_window_timer = bhop_window_frames
 		
 	was_on_floor = is_on_floor()
 
 func movement_left_right_input():
-	# ----- MOVEMENT -----
 	direction = Input.get_axis("move_left", "move_right")
 	input_dir = signi(direction)
 
 func glide_input():
-	# ----- GLIDE INPUT -----
 	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
 		is_gliding = true
 		is_crouch_jump = false
@@ -203,20 +189,16 @@ func glide_input():
 		is_gliding = false
 
 func dash_input():
-	# ----- DASH INPUT -----
 	if Input.is_action_just_pressed("dash") and can_dash() and !is_crouching and !is_diving:
 		start_dash()
 
 func jump_input():
-	# ----- JUMP INPUT -----
 	if Input.is_action_just_pressed("jump"):
-		# ----- B-HOP CHECK -----
-		if bhop_window_timer > 0 and abs(move_speed_current) > 5:
-			
+		if bhop_window_timer > 0 and abs(move_speed_current) > 50:
 			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
 
 			var stack_index = bhop_stacks - 1
-
+			
 			move_speed_current *= bhop_horizontal_boosts[stack_index]
 			velocity.y *= bhop_vertical_boosts[stack_index]
 
@@ -226,16 +208,13 @@ func jump_input():
 		perform_jump()
 
 func slide_input():
-	# ----- SLIDE INPUT -----
 	if Input.is_action_just_pressed("crouch") and sprint_momentum and is_on_floor() and !is_sliding and abs(velocity.x) > 150:
 		perform_slide()
 
 func crouch_input():
-	# ----- CROUCH INPUT -----
 	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
 
 func sprint_input():
-	# ----- SPRINT INPUT -----
 	if is_on_floor():
 		sprint_momentum = (
 			Input.is_action_pressed("sprint")
@@ -244,11 +223,9 @@ func sprint_input():
 		)
 
 func gravity_and_variable_timed_jumps(delta):
-	# ----- GRAVITY -----
-	if not is_on_floor():
+	if !is_on_floor():
 		if velocity.y < 0:
 			if is_crouch_jump:
-				# Always full jump height
 				velocity.y += gravity * delta
 			else:
 				if Input.is_action_pressed("jump") and jump_hold_timer < max_jump_hold_time:
@@ -272,9 +249,7 @@ func perform_jump():
 	jump_force = jump_power * jump_multiplier
 	var horizontal_jump_override := false
 
-	# ----- CROUCH JUMP -----
 	if is_crouching and !is_sliding and is_on_floor():
-
 		if abs(move_speed_current) < 1:
 			jump_force *= crouch_jump_multiplier
 			is_crouch_jump = true
@@ -285,26 +260,20 @@ func perform_jump():
 			horizontal_jump_override = true
 		else:
 			jump_force *= crouch_hop_multiplier
-
-	# ----- SLIDE JUMP -----
 	elif is_sliding:
-
 		is_sliding = false
 		locked_air_direction = slide_direction
 
-	# ----- APPLY JUMP -----
 	velocity.y = jump_force
 	jump_hold_timer = 0.0
 	jumps_used += 1
 
 	if jumps_used == 2:
 		did_double_jump = true
-		
-		# Release crouch jump directional lock
+
 		is_crouch_jump = false
 		locked_air_direction = 0
 
-	# ensure slide/crouch states don't persist incorrectly
 	if is_sliding:
 		is_sliding = false
 
@@ -313,7 +282,6 @@ func perform_jump():
 			velocity.x = locked_air_direction * move_speed_current
 
 func ledge_fall_check():
-	# ----- LEDGE FALL COUNTS AS FIRST JUMP -----
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
 		jumps_used = 1
 
@@ -333,10 +301,6 @@ func start_dash():
 	
 	dash_speed = dash_distance / dash_time
 	
-	# ----- HARD CANCEL ALL MOMENTUM -----
-	velocity = Vector2.ZERO
-	move_speed_current = 0.0
-	locked_air_direction = 0
 	is_crouch_jump = false
 	jump_hold_timer = max_jump_hold_time
 	
@@ -344,7 +308,6 @@ func start_dash():
 		dashes_used += 1
 
 func finish_dash(delta):
-	# ----- DASH -----
 	if is_dashing:
 		dash_timer -= delta
 		
@@ -354,18 +317,19 @@ func finish_dash(delta):
 		if dash_timer <= 0:
 			is_dashing = false
 			dash_cooldown_timer = dash_cooldown
+			
+			move_speed_current = target_speed
+			locked_air_direction = dash_direction
 		
 		return
 
 func can_dash() -> bool:
 	if dash_cooldown_timer > 0:
 		return false
-	
-	# Ground dash allowed (but cooldown limited)
+
 	if is_on_floor():
 		return true
 
-	# Air dash limited
 	return dashes_used < max_air_dashes
 
 func perform_slide():
@@ -403,8 +367,7 @@ func start_dive():
 		return
 	
 	is_diving = true
-	
-	# cancel existing movement
+
 	is_sliding = false
 	is_dashing = false
 	is_gliding = false
@@ -413,7 +376,6 @@ func start_dive():
 	move_speed_current = 0
 
 func finish_dive():
-	# ----- DIVE -----
 	if is_diving:
 		velocity.x = 0
 		velocity.y = dive_speed
@@ -431,8 +393,6 @@ func handle_air_direction_penalty():
 		move_speed_current *= 0.35
 
 func handle_ground_direction_switch(delta):
-	#velocity_dir = sign(velocity.x)
-	
 	if is_on_floor() and input_dir != 0 and input_dir != previous_facing:
 		direction_switch_timer = direction_switch_duration
 		sprint_momentum = false
@@ -452,20 +412,16 @@ func calculate_target_speed():
 	elif is_gliding:
 		target_speed = base_speed
 
-func handle_ground_acceleration(delta):
-	# --------------------------------
-	# ACCELERATION (GROUND)
-	# --------------------------------
+func handle_acceleration_air_ground(delta):
 	if direction != 0:
 		if is_on_floor():
 			move_speed_current = lerpf(
 				move_speed_current,
 				target_speed,
-				clamp(sprint_accel * delta, 0.0, 1.0)
+				clamp(ground_accel * delta, 0.0, 1.0)
 			)
 		else:
-			if not is_crouch_jump:
-
+			if !is_crouch_jump:
 				var air_control = air_control_when_change_direction
 
 				if is_gliding:
@@ -476,11 +432,11 @@ func handle_ground_acceleration(delta):
 					move_speed_current = lerpf(
 						move_speed_current,
 						base_speed,
-						clamp(sprint_accel * air_control * delta, 0.0, 1.0)
+						clamp(ground_accel * air_control * delta, 0.0, 1.0)
 					)
 
 		previous_facing = facing
-		if not is_crouch_jump:
+		if !is_crouch_jump:
 			facing = input_dir
 	else:
 		if is_on_floor():
@@ -491,7 +447,6 @@ func handle_ground_acceleration(delta):
 			)
 
 func apply_horizontal_velocity():
-	# Apply velocity
 	if is_on_floor():
 		velocity.x = facing * move_speed_current
 	else:
