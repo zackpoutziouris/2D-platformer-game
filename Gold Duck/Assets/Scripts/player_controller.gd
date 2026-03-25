@@ -3,7 +3,6 @@ class_name PlayerController
 
 # Base movement
 @export var speed : float = 4
-@export var max_move_speed : float = 500.0
 @export var jump_power: float = 9
 @export var camera : Camera2D
 @export var air_control_when_change_direction : float = 0.8
