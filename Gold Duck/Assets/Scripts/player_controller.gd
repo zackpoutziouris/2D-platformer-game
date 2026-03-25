@@ -14,6 +14,7 @@ var direction = 0
 var jump_force = 0.0
 var base_speed = 1
 var move_speed_current : float = 0.0
+var air_control : float = 0.0
 
 # Variable jump tuning
 @export var jump_hold_gravity_scale : float = 0.6
@@ -26,6 +27,7 @@ var jumps_used := 0
 var max_jumps := 2   # jump + double jump
 var did_double_jump := false
 var locked_air_direction: int = 0
+var horizontal_jump_override := false
 
 # Glide
 @export var glide_fall_speed := 70
@@ -246,22 +248,11 @@ func perform_jump():
 		return
 
 	jump_force = jump_power * jump_multiplier
-	var horizontal_jump_override := false
 
 	if is_crouching and !is_sliding and is_on_floor():
-		if abs(move_speed_current) < 1:
-			jump_force *= crouch_jump_multiplier
-			is_crouch_jump = true
-
-			locked_air_direction = -facing
-			move_speed_current = base_speed * crouch_jump_back_boost
-			velocity.x = locked_air_direction * move_speed_current
-			horizontal_jump_override = true
-		else:
-			jump_force *= crouch_hop_multiplier
+		crouch_jump()
 	elif is_sliding:
-		is_sliding = false
-		locked_air_direction = slide_direction
+		slide_jump()
 
 	velocity.y = jump_force
 	jump_hold_timer = 0.0
@@ -273,12 +264,20 @@ func perform_jump():
 		is_crouch_jump = false
 		locked_air_direction = 0
 
-	if is_sliding:
-		is_sliding = false
+func crouch_jump():
+	if abs(move_speed_current) < 1:
+		jump_force *= crouch_jump_multiplier
+		is_crouch_jump = true
 
-	if !horizontal_jump_override and !is_on_floor():
-		if locked_air_direction != 0:
-			velocity.x = locked_air_direction * move_speed_current
+		locked_air_direction = -facing
+		move_speed_current = base_speed * crouch_jump_back_boost
+		velocity.x = locked_air_direction * move_speed_current
+		horizontal_jump_override = true
+	else:
+		jump_force *= crouch_hop_multiplier
+
+func slide_jump():
+	jump_force *= 1
 
 func ledge_fall_check():
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
@@ -356,7 +355,7 @@ func update_slide(delta) -> bool:
 	velocity.x = slide_direction * move_speed_current
 	move_and_slide()
 
-	if slide_timer <= 0 or abs(move_speed_current) < 5:
+	if slide_timer <= 0 or abs(move_speed_current) < 5 or !is_on_floor():
 		is_sliding = false
 	
 	return true
@@ -421,7 +420,7 @@ func handle_acceleration_air_ground(delta):
 			)
 		else:
 			if !is_crouch_jump:
-				var air_control = air_control_when_change_direction
+				air_control = air_control_when_change_direction
 
 				if is_gliding:
 					air_control = glide_walk_control
