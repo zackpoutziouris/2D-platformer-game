@@ -10,9 +10,9 @@ class_name PlayerController
 @export var ground_decel : float = 14.0
 var speed_multiplier: float = 30
 var jump_multiplier: float = -30
-var direction = 0
-var jump_force = 0.0
-var base_speed = 1
+var direction : float = 0.0
+var jump_force : float = 0.0
+var base_speed : float = 1
 var move_speed_current : float = 0.0
 var air_control : float = 0.0
 
@@ -23,38 +23,38 @@ var air_control : float = 0.0
 var jump_hold_timer : float = 0.0
 
 # Double jump
-var jumps_used := 0
-var max_jumps := 2   # jump + double jump
-var did_double_jump := false
-var locked_air_direction: int = 0
-var horizontal_jump_override := false
+var jumps_used : int = 0
+var max_jumps : int = 2   # jump + double jump
+var did_double_jump : bool = false
+var locked_air_direction : int = 0
+var horizontal_jump_override : bool = false
 
 # Glide
-@export var glide_fall_speed := 70
-@export var fall_speed_limit_for_glide_to_work := 500
-@export var glide_walk_control := 1.0
-var is_gliding := false
+@export var glide_fall_speed : float = 70
+@export var fall_speed_limit_for_glide_to_work : float = 500
+@export var glide_walk_control : float = 1.0
+var is_gliding : bool = false
 
 # B-Hop system
-@export var bhop_window_frames := 5
-@export var bhop_horizontal_boosts := [2, 2.5, 3]
-@export var bhop_vertical_boosts := [2, 2.5, 3]
-@export var bhop_max_stacks := 3
-var bhop_window_timer := 0
-var bhop_stacks := 0
-var was_on_floor := false
+@export var bhop_window_frames : int = 5
+@export var bhop_horizontal_boosts : Array[float] = [2, 2.5, 3]
+@export var bhop_vertical_boosts : Array[float] = [2, 2.5, 3]
+@export var bhop_max_stacks : int = 3
+var bhop_window_timer : int = 0
+var bhop_stacks : int = 0
+var was_on_floor : bool = false
 
 # Dash system
-@export var dash_distance := 65
-@export var dash_time := 0.12
-@export var dash_cooldown := 0.25
-var is_dashing := false
-var dash_timer := 0.0
-var dash_direction := 1
-var dash_cooldown_timer := 0.0
-var dash_speed := 0.0
-var dashes_used := 0
-var max_air_dashes := 1
+@export var dash_distance : float = 45
+@export var dash_time : float = 0.12
+@export var dash_cooldown : float = 0.25
+var is_dashing : bool = false
+var dash_timer : float = 0.0
+var dash_direction : int = 1
+var dash_cooldown_timer : float = 0.0
+var dash_speed : float = 0.0
+var dashes_used : int = 0
+var max_air_dashes : int = 1
 var dash_motion : Vector2 = Vector2.ZERO
 
 # Crouch
@@ -68,29 +68,27 @@ var is_crouch_jump : bool = false
 # Sprint
 @export var sprint_multiplier : float = 1.6
 var sprint_momentum : bool = false
-var target_speed = 1
+var target_speed : float = 1
 
 # Slide
-@export var slide_boost_multiplier := 1.7
-@export var slide_duration := 0.9
-@export var slide_decel := 5
-var is_sliding := false
-var slide_timer := 0.0
-var slide_direction := 0
+@export var slide_boost_multiplier : float = 1.7
+@export var slide_duration : float = 0.9
+@export var slide_decel : float = 5
+var is_sliding : bool = false
+var slide_timer : float = 0.0
+var slide_direction : int = 0
 
 # Dive
-@export var dive_speed := 165
-var is_diving := false
-var last_down_tap_time := 0.0
-var down_double_tap_window := 0.25
+@export var dive_speed : float = 165
+var is_diving : bool = false
 
 # Direction
-@export var direction_switch_duration := 0.1
-var facing := 1
-var previous_facing := 1
+@export var direction_switch_duration : float = 0.1
+var facing : int = 1
+var previous_facing : int = 1
 var input_dir : int = 0
 var velocity_dir : int = 1
-var direction_switch_timer := 0.0
+var direction_switch_timer : float = 0.0
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -179,7 +177,7 @@ func bhop_timer_check():
 
 func movement_left_right_input():
 	direction = Input.get_axis("move_left", "move_right")
-	input_dir = signi(direction)
+	input_dir = sign(direction)
 
 func glide_input():
 	if !is_on_floor() and velocity.y > 0 and Input.is_action_pressed("jump") and !is_diving and !is_dashing:
