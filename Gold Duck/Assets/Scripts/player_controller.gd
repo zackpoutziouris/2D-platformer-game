@@ -77,6 +77,7 @@ var target_speed : float = 1
 var is_sliding : bool = false
 var slide_timer : float = 0.0
 var slide_direction : int = 0
+var can_landing_slide : bool = false
 
 # Dive
 @export var dive_speed : float = 165
@@ -100,6 +101,8 @@ func _input(event):
 func _physics_process(delta):
 	dash_timer_check(delta)
 	bhop_timer_check()
+	landing_slide_input()
+	handle_landing()
 	ledge_fall_check()
 	
 	reset_on_player_touch_ground()
@@ -169,10 +172,18 @@ func dash_timer_check(delta):
 func bhop_timer_check():
 	if bhop_window_timer > 0:
 		bhop_window_timer -= 1
+
+func handle_landing():
+	if !is_on_floor() and was_on_floor:
+		can_landing_slide = false
 		
 	if is_on_floor() and !was_on_floor:
 		bhop_window_timer = bhop_window_frames
 		
+		if can_landing_slide and !is_sliding and abs(velocity.x) > 100:
+			perform_landing_slide()
+			can_landing_slide = false
+	
 	was_on_floor = is_on_floor()
 
 func movement_left_right_input():
@@ -357,7 +368,19 @@ func update_slide(delta) -> bool:
 		is_sliding = false
 	
 	return true
+
+func landing_slide_input():
+	if !is_on_floor() and Input.is_action_just_pressed("crouch"):
+		can_landing_slide = true
+
+func perform_landing_slide():
+	is_sliding = true
+	slide_timer = slide_duration
+	slide_direction = facing
 	
+	move_speed_current = max(abs(velocity.x), base_speed)
+	move_speed_current *= slide_boost_multiplier
+
 func start_dive():
 	if is_on_floor():
 		return
