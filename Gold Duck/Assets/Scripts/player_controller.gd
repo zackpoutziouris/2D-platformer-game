@@ -78,6 +78,12 @@ var is_sliding : bool = false
 var slide_timer : float = 0.0
 var slide_direction : int = 0
 var can_landing_slide : bool = false
+var slide_has_bhop_boost : bool = false
+var stored_slide_bhop_stacks : int = 0
+var bhop_slide_buffer : int = 0
+var bhop_slide_buffer_max : int = 5
+var wants_landing_slide : bool = false
+var last_slide_jump_stacks : int = 0
 
 # Dive
 @export var dive_speed : float = 165
@@ -146,6 +152,7 @@ func reset_on_player_touch_ground():
 		did_double_jump = false
 		dashes_used = 0
 		locked_air_direction = 0
+		last_slide_jump_stacks = 0
 			
 		if is_on_floor() and input_dir == 0 and !is_sliding:
 			move_speed_current = 0.0
@@ -172,17 +179,23 @@ func dash_timer_check(delta):
 func bhop_timer_check():
 	if bhop_window_timer > 0:
 		bhop_window_timer -= 1
+	if bhop_slide_buffer > 0:
+		bhop_slide_buffer -= 1
 
 func handle_landing():
-	if !is_on_floor() and was_on_floor:
-		can_landing_slide = false
-		
 	if is_on_floor() and !was_on_floor:
 		bhop_window_timer = bhop_window_frames
 		
-		if can_landing_slide and !is_sliding and abs(velocity.x) > 100:
+		if wants_landing_slide and !is_sliding and abs(velocity.x) > 100:
+			if bhop_slide_buffer > 0:
+				stored_slide_bhop_stacks = bhop_stacks
+				slide_has_bhop_boost = stored_slide_bhop_stacks > 0
+			else:
+				stored_slide_bhop_stacks = 0
+				slide_has_bhop_boost = false
+			
 			perform_landing_slide()
-			can_landing_slide = false
+			bhop_slide_buffer = 0
 	
 	was_on_floor = is_on_floor()
 
@@ -206,15 +219,13 @@ func jump_input():
 	if Input.is_action_just_pressed("jump"):
 		if bhop_window_timer > 0 and abs(move_speed_current) > 50:
 			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
-
-			var stack_index = bhop_stacks - 1
-			
-			move_speed_current *= bhop_horizontal_boosts[stack_index]
-			velocity.y *= bhop_vertical_boosts[stack_index]
-
+			if !is_sliding:
+				var stack_index = bhop_stacks - 1
+				move_speed_current *= bhop_horizontal_boosts[stack_index]
+				velocity.y *= bhop_vertical_boosts[stack_index]
 		else:
 			bhop_stacks = 0
-
+		
 		perform_jump()
 
 func slide_input():
@@ -286,7 +297,19 @@ func crouch_jump():
 		jump_force *= crouch_hop_multiplier
 
 func slide_jump():
-	jump_force *= 1
+	if slide_has_bhop_boost and stored_slide_bhop_stacks > 0:
+		var stack_index = stored_slide_bhop_stacks - 1
+		
+		move_speed_current *= bhop_horizontal_boosts[stack_index]
+		velocity.y *= bhop_vertical_boosts[stack_index]
+
+		last_slide_jump_stacks = stored_slide_bhop_stacks
+	else:
+		last_slide_jump_stacks = 0
+
+	bhop_stacks = 0
+	stored_slide_bhop_stacks = 0
+	slide_has_bhop_boost = false
 
 func ledge_fall_check():
 	if !is_on_floor() and jumps_used == 0 and velocity.y > 0:
@@ -370,8 +393,11 @@ func update_slide(delta) -> bool:
 	return true
 
 func landing_slide_input():
-	if !is_on_floor() and Input.is_action_just_pressed("crouch"):
-		can_landing_slide = true
+	if !is_on_floor():
+		wants_landing_slide = Input.is_action_pressed("crouch")
+		
+		if Input.is_action_just_pressed("crouch"):
+			bhop_slide_buffer = bhop_slide_buffer_max
 
 func perform_landing_slide():
 	is_sliding = true

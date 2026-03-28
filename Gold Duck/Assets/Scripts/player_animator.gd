@@ -50,7 +50,12 @@ func _process(_delta):
 		play_if_not("glide")
 		return
 	if player_controller.velocity.y < 0:
-		match player_controller.bhop_stacks:
+		var stacks = player_controller.last_slide_jump_stacks
+		
+		if stacks == 0:
+			stacks = player_controller.bhop_stacks
+		
+		match stacks:
 			0:
 				play_if_not("jump")
 			1:
