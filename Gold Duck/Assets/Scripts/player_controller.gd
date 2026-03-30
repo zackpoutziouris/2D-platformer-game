@@ -84,6 +84,7 @@ var bhop_slide_buffer : int = 0
 var bhop_slide_buffer_max : int = 5
 var wants_landing_slide : bool = false
 var last_slide_jump_stacks : int = 0
+var landing_slide_consumed : bool = false
 
 # Dive
 @export var dive_speed : float = 165
@@ -200,6 +201,8 @@ func handle_landing():
 				slide_has_bhop_boost = false
 			
 			perform_landing_slide()
+			landing_slide_consumed = true
+			wants_landing_slide = false
 			bhop_slide_buffer = 0
 	
 	was_on_floor = is_on_floor()
@@ -398,11 +401,14 @@ func update_slide(delta) -> bool:
 	return true
 
 func landing_slide_input():
-	if !is_on_floor():
+	if !is_on_floor() and !landing_slide_consumed:
 		wants_landing_slide = Input.is_action_pressed("crouch")
 		
 		if Input.is_action_just_pressed("crouch"):
 			bhop_slide_buffer = bhop_slide_buffer_max
+	
+	if Input.is_action_just_released("crouch"):
+		landing_slide_consumed = false
 
 func perform_landing_slide():
 	is_sliding = true
