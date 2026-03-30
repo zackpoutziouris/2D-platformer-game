@@ -112,6 +112,7 @@ func _physics_process(delta):
 	ledge_fall_check()
 	
 	reset_on_player_touch_ground()
+	handle_player_in_air()
 	
 	gravity_and_variable_timed_jumps(delta)
 	
@@ -161,6 +162,10 @@ func reset_on_player_touch_ground():
 		
 		if is_on_floor() and abs(move_speed_current) < 5:
 			bhop_stacks = 0
+
+func handle_player_in_air():
+	if !is_on_floor():
+		is_sliding = false
 
 func move_down_platform_input_and_action(event):
 	if event.is_action_pressed("move_down"):
