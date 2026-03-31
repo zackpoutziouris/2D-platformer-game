@@ -257,6 +257,14 @@ _data = {
 radius = 4.0
 height = 24.0
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_38rej"]
+radius = 4.0
+height = 20.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_t1xgp"]
+radius = 4.0
+height = 18.0
+
 [node name="Player" type="CharacterBody2D" unique_id=324603296 node_paths=PackedStringArray("camera") groups=["player"]]
 z_index = 10
 position = Vector2(0, -8)
@@ -271,11 +279,14 @@ process_callback = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
-[node name="PlayerAnimator" type="Node2D" parent="." unique_id=1473667160 node_paths=PackedStringArray("player_controller", "animation_player", "sprite")]
+[node name="PlayerAnimator" type="Node2D" parent="." unique_id=1473667160 node_paths=PackedStringArray("player_controller", "animation_player", "sprite", "collision_stand", "collision_air", "collision_crouch")]
 script = ExtResource("2_38rej")
 player_controller = NodePath("..")
 animation_player = NodePath("AnimationPlayer")
 sprite = NodePath("Sprite2D")
+collision_stand = NodePath("../CollisionStand")
+collision_air = NodePath("../CollisionAir")
+collision_crouch = NodePath("../CollisionCrouch")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="PlayerAnimator" unique_id=1545976250]
 root_node = NodePath("../..")
@@ -289,6 +300,14 @@ texture = ExtResource("3_38rej")
 region_enabled = true
 region_rect = Rect2(0, 0, 16, 16)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1611538800]
+[node name="CollisionStand" type="CollisionShape2D" parent="." unique_id=1611538800]
 position = Vector2(0, -4)
 shape = SubResource("CapsuleShape2D_7dd06")
+
+[node name="CollisionAir" type="CollisionShape2D" parent="." unique_id=289085026]
+position = Vector2(0, -6)
+shape = SubResource("CapsuleShape2D_38rej")
+
+[node name="CollisionCrouch" type="CollisionShape2D" parent="." unique_id=1808186109]
+position = Vector2(0, -1)
+shape = SubResource("CapsuleShape2D_t1xgp")
