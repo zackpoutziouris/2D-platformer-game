@@ -314,7 +314,9 @@ func slide_jump():
 		last_slide_jump_stacks = stored_slide_bhop_stacks
 	else:
 		last_slide_jump_stacks = 0
-
+	
+	landing_slide_consumed = true
+	
 	bhop_stacks = 0
 	stored_slide_bhop_stacks = 0
 	slide_has_bhop_boost = false
