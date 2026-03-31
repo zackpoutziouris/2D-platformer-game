@@ -51,6 +51,7 @@ func _process(_delta):
 	
 	# Double jump plays once
 	if player_controller.did_double_jump && player_controller.velocity.y < 0:
+		set_collision("air")
 		play_if_not("double-jump")
 		return
 
@@ -59,7 +60,7 @@ func _process(_delta):
 	# =========================
 	# Glide
 	if player_controller.is_gliding:
-		set_collision("air")
+		set_collision("stand")
 		play_if_not("glide")
 		return
 
@@ -81,7 +82,7 @@ func _process(_delta):
 				play_if_not("bhop3")
 		return
 	elif player_controller.velocity.y > 0 and !player_controller.is_on_floor():
-		set_collision("air")
+		set_collision("stand")
 		play_if_not("fall")
 		return
 	
@@ -89,7 +90,7 @@ func _process(_delta):
 	# CROUCH STATES
 	# =========================
 	if player_controller.is_crouching:
-		set_collision("air")
+		set_collision("crouch")
 		if abs(player_controller.velocity.x) > 3:
 			play_if_not("crouch-walk")
 		else:
@@ -103,7 +104,6 @@ func _process(_delta):
 		# Speed up animation if sprinting
 		if player_controller.sprint_momentum:
 			animation_player.speed_scale = sprint_anim_speed
-		
 		set_collision("stand")
 		play_if_not("walk")
 	else:

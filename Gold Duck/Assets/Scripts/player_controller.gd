@@ -98,8 +98,35 @@ var input_dir : int = 0
 var velocity_dir : int = 1
 var direction_switch_timer : float = 0.0
 
+# Collsion boxes depending on what the player is doing
+#@onready var collision_stand = $CollisionStand
+#@onready var collision_air = $CollisionAir
+#@onready var collision_crouch = $CollisionCrouch
+#var current_collision_state := ""
+
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+
+#func update_collision_state():
+	#var new_state = "stand"
+#
+	#if !is_on_floor() and !is_diving and velocity.y < 0:
+		#new_state = "air"
+	#elif is_sliding or is_crouching:
+		#new_state = "crouch"
+	#elif is_diving:
+		#new_state = "stand"
+	#elif velocity.y > 0:
+		#new_state = "stand"
+#
+	#if new_state == current_collision_state:
+		#return
+	#
+	#current_collision_state = new_state
+#
+	#collision_stand.disabled = new_state != "stand"
+	#collision_air.disabled = new_state != "air"
+	#collision_crouch.disabled = new_state != "crouch"
 
 func _input(event):
 	move_down_platform_input_and_action(event)
@@ -142,6 +169,7 @@ func _physics_process(delta):
 	apply_horizontal_velocity()
 	
 	move_and_slide()
+	#update_collision_state()
 
 
 
