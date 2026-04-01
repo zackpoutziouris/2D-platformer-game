@@ -98,6 +98,11 @@ var input_dir : int = 0
 var velocity_dir : int = 1
 var direction_switch_timer : float = 0.0
 
+# Collision box references
+@export var collision_stand : CollisionShape2D
+@export var collision_air : CollisionShape2D
+@export var collision_crouch : CollisionShape2D
+
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
@@ -174,6 +179,18 @@ func move_down_platform_input_and_action(event):
 	else:		
 		set_collision_mask_value(10, true)
 
+func can_fit_shape(shape_node: CollisionShape2D) -> bool:
+	var space_state = get_world_2d().direct_space_state
+	
+	var query = PhysicsShapeQueryParameters2D.new()
+	query.shape = shape_node.shape
+	query.transform = shape_node.global_transform
+	query.collision_mask = collision_mask
+	query.exclude = [self]
+	
+	var result = space_state.intersect_shape(query)
+	return result.is_empty()
+
 func dive_input(event):
 	if event.is_action_pressed("move_down") and !is_on_floor():
 		start_dive()
@@ -224,7 +241,7 @@ func dash_input():
 		start_dash()
 
 func jump_input():
-	if Input.is_action_just_pressed("jump"):
+	if Input.is_action_just_pressed("jump") and can_jump():
 		if bhop_window_timer > 0 and abs(move_speed_current) > 50:
 			bhop_stacks = min(bhop_stacks + 1, bhop_max_stacks)
 			if !is_sliding:
@@ -236,12 +253,27 @@ func jump_input():
 		
 		perform_jump()
 
+func can_jump() -> bool:
+	if is_crouching:
+		return can_fit_shape(collision_air)
+	
+	return true
+
 func slide_input():
 	if Input.is_action_just_pressed("crouch") and sprint_momentum and is_on_floor() and !is_sliding and abs(velocity.x) > 150:
 		perform_slide()
 
 func crouch_input():
-	is_crouching = Input.is_action_pressed("crouch") and is_on_floor()
+	if Input.is_action_pressed("crouch"):
+		is_crouching = is_on_floor()
+	else:
+		if can_uncrouch():
+			is_crouching = false
+		else:
+			is_crouching = true
+
+func can_uncrouch() -> bool:
+	return can_fit_shape(collision_stand)
 
 func sprint_input():
 	if is_on_floor():
