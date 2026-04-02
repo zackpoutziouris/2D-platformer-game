@@ -103,6 +103,10 @@ var direction_switch_timer : float = 0.0
 @export var collision_air : CollisionShape2D
 @export var collision_crouch : CollisionShape2D
 
+# Drop down platforms
+@export var drop_through_duration : float = 0.05
+var drop_through_timer : float = 0.0
+
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
@@ -116,6 +120,7 @@ func _physics_process(delta):
 	landing_slide_input()
 	handle_landing()
 	ledge_fall_check()
+	check_drop_down_platform_timer(delta)
 	
 	reset_on_player_touch_ground()
 	handle_player_in_air()
@@ -174,9 +179,14 @@ func handle_player_in_air():
 		is_sliding = false
 
 func move_down_platform_input_and_action(event):
-	if event.is_action_pressed("move_down"):
+	if event.is_action_pressed("move_down") and is_on_floor():
+		drop_through_timer = drop_through_duration
+
+func check_drop_down_platform_timer(delta):
+	if drop_through_timer > 0:
+		drop_through_timer -= delta
 		set_collision_mask_value(10, false)
-	else:		
+	else:
 		set_collision_mask_value(10, true)
 
 func can_switch_to(shape: CollisionShape2D) -> bool:
