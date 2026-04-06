@@ -54,7 +54,13 @@ func _process(_delta):
 		set_collision("air")
 		play_if_not("double-jump")
 		return
-
+	
+	# Wall slide
+	if player_controller.is_wall_sliding:
+		set_collision("air")
+		play_if_not("wall-slide")
+		return
+	
 	# =========================
 	# AIR STATES
 	# =========================

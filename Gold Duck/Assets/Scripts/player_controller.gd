@@ -86,6 +86,16 @@ var wants_landing_slide : bool = false
 var last_slide_jump_stacks : int = 0
 var landing_slide_consumed : bool = false
 
+# Wall slide
+@export var wall_slide_speed : float = 60
+@export var wall_jump_horizontal : float = 220
+@export var wall_jump_vertical : float = -260
+@export var wall_jump_lock_duration : float = 0.12
+var wall_jump_lock_timer : float = 0.0
+var is_wall_sliding : bool = false
+var wall_normal : Vector2 = Vector2.ZERO
+var wall_jump_direction : int = 0
+
 # Dive
 @export var dive_speed : float = 165
 var is_diving : bool = false
@@ -117,6 +127,8 @@ func _input(event):
 func _physics_process(delta):
 	dash_timer_check(delta)
 	bhop_timer_check()
+	if wall_jump_lock_timer > 0:
+		wall_jump_lock_timer -= delta
 	landing_slide_input()
 	handle_landing()
 	ledge_fall_check()
@@ -128,6 +140,7 @@ func _physics_process(delta):
 	gravity_and_variable_timed_jumps(delta)
 	
 	movement_left_right_input()
+	check_wall_slide()
 	glide_input()
 	dash_input()
 	jump_input()
@@ -159,7 +172,7 @@ func _physics_process(delta):
 
 # ---- Player Mechanics ---- 
 func reset_on_player_touch_ground():
-	if is_on_floor():
+	if is_on_floor() or is_wall_sliding:
 		jumps_used = 0
 		did_double_jump = false
 		dashes_used = 0
@@ -175,7 +188,7 @@ func reset_on_player_touch_ground():
 			bhop_stacks = 0
 
 func handle_player_in_air():
-	if !is_on_floor():
+	if !is_on_floor() or is_wall_sliding:
 		is_sliding = false
 
 func move_down_platform_input_and_action(event):
@@ -303,6 +316,14 @@ func sprint_input():
 		)
 
 func gravity_and_variable_timed_jumps(delta):
+	if is_wall_sliding:
+		velocity.y += gravity * delta
+		
+		if velocity.y > wall_slide_speed:
+			velocity.y = wall_slide_speed
+		
+		return
+	
 	if !is_on_floor():
 		if velocity.y < 0:
 			if is_crouch_jump:
@@ -323,6 +344,21 @@ func gravity_and_variable_timed_jumps(delta):
 				velocity.y += gravity * delta
 
 func perform_jump():
+	# WALL JUMP TAKES PRIORITY
+	if is_wall_sliding:
+		velocity.y = wall_jump_vertical
+		
+		# push away from wall
+		wall_jump_direction = -sign(wall_normal.x)
+		velocity.x = wall_jump_direction * wall_jump_horizontal
+		
+		wall_jump_lock_timer = wall_jump_lock_duration
+		locked_air_direction = wall_jump_direction
+		
+		is_wall_sliding = false
+		jump_hold_timer = 0.0
+		return
+	
 	if jumps_used >= max_jumps:
 		return
 
@@ -471,6 +507,30 @@ func perform_landing_slide():
 	move_speed_current = max(abs(velocity.x), base_speed)
 	move_speed_current *= slide_boost_multiplier
 
+func check_wall_slide():
+	is_wall_sliding = false
+	
+	if is_on_floor():
+		return
+	
+	if velocity.y < 0:
+		return  # don't slide while going up
+	
+	if input_dir == 0:
+		return
+	
+	for i in get_slide_collision_count():
+		var collision = get_slide_collision(i)
+		var normal = collision.get_normal()
+		
+		# Wall = mostly horizontal normal
+		if abs(normal.x) > 0.7:
+			# Make sure player is pressing INTO the wall
+			if sign(input_dir) == -sign(normal.x):
+				is_wall_sliding = true
+				wall_normal = normal
+				return
+
 func start_dive():
 	if is_on_floor():
 		return
@@ -556,6 +616,11 @@ func handle_acceleration_air_ground(delta):
 			)
 
 func apply_horizontal_velocity():
+	if wall_jump_lock_timer > 0:
+		# KEEP momentum in jump direction
+		velocity.x = wall_jump_direction * wall_jump_horizontal
+		return
+	
 	if is_on_floor():
 		velocity.x = facing * move_speed_current
 	else:
