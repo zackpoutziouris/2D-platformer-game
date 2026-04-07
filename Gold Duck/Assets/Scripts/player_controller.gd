@@ -90,11 +90,13 @@ var landing_slide_consumed : bool = false
 @export var wall_slide_speed : float = 60
 @export var wall_jump_horizontal : float = 220
 @export var wall_jump_vertical : float = -260
-@export var wall_jump_lock_duration : float = 0.12
+@export var wall_jump_lock_duration : float = 0.25
 var wall_jump_lock_timer : float = 0.0
 var is_wall_sliding : bool = false
 var wall_normal : Vector2 = Vector2.ZERO
 var wall_jump_direction : int = 0
+var last_wall_jump_normal : Vector2 = Vector2.ZERO
+var has_used_wall_jump : bool = false
 
 # Dive
 @export var dive_speed : float = 165
@@ -186,6 +188,10 @@ func reset_on_player_touch_ground():
 		
 		if is_on_floor() and abs(move_speed_current) < 5:
 			bhop_stacks = 0
+	
+	if is_on_floor():
+		has_used_wall_jump = false
+		last_wall_jump_normal = Vector2.ZERO
 
 func handle_player_in_air():
 	if !is_on_floor() or is_wall_sliding:
@@ -346,14 +352,22 @@ func gravity_and_variable_timed_jumps(delta):
 func perform_jump():
 	# WALL JUMP TAKES PRIORITY
 	if is_wall_sliding:
+		if has_used_wall_jump:
+			if wall_normal.dot(last_wall_jump_normal) > 0.9:
+				return  # can't jump again from same wall
+				
 		velocity.y = wall_jump_vertical
 		
 		# push away from wall
-		wall_jump_direction = -sign(wall_normal.x)
+		facing *= -1
+		wall_jump_direction = sign(wall_normal.x)
 		velocity.x = wall_jump_direction * wall_jump_horizontal
 		
 		wall_jump_lock_timer = wall_jump_lock_duration
 		locked_air_direction = wall_jump_direction
+		
+		last_wall_jump_normal = wall_normal
+		has_used_wall_jump = true
 		
 		is_wall_sliding = false
 		jump_hold_timer = 0.0
@@ -582,6 +596,8 @@ func calculate_target_speed():
 		target_speed = base_speed
 
 func handle_acceleration_air_ground(delta):
+	if wall_jump_lock_timer > 0:
+		return
 	if direction != 0:
 		if is_on_floor():
 			move_speed_current = lerpf(
@@ -592,10 +608,10 @@ func handle_acceleration_air_ground(delta):
 		else:
 			if !is_crouch_jump:
 				air_control = air_control_when_change_direction
-
+				
 				if is_gliding:
 					air_control = glide_walk_control
-
+					
 				if input_dir != 0:
 					locked_air_direction = input_dir
 					move_speed_current = lerpf(
@@ -603,7 +619,7 @@ func handle_acceleration_air_ground(delta):
 						base_speed,
 						clamp(ground_accel * air_control * delta, 0.0, 1.0)
 					)
-
+			
 		previous_facing = facing
 		if !is_crouch_jump:
 			facing = input_dir
