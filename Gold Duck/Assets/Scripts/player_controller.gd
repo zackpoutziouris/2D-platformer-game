@@ -88,7 +88,7 @@ var landing_slide_consumed : bool = false
 
 # Wall slide
 @export var wall_slide_speed : float = 60
-@export var wall_jump_horizontal : float = 220
+@export var wall_jump_horizontal : float = 140
 @export var wall_jump_vertical : float = -260
 @export var wall_jump_lock_duration : float = 0.25
 var wall_jump_lock_timer : float = 0.0
