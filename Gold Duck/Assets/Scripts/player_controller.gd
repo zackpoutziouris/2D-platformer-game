@@ -180,9 +180,6 @@ func reset_on_player_touch_ground():
 		dashes_used = 0
 		locked_air_direction = 0
 		last_slide_jump_stacks = 0
-			
-		if is_on_floor() and input_dir == 0 and !is_sliding:
-			move_speed_current = 0.0
 
 		is_crouch_jump = false
 		
