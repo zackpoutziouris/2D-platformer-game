@@ -103,6 +103,8 @@ var has_used_wall_jump : bool = false
 var wall_bhop_timer : int = 0
 var wall_jump_velocity_x : float = 0.0
 var was_wall_sliding : bool = false
+var same_wall_jump_count : int = 0
+@export var max_same_wall_jumps : int = 2
 
 # Dive
 @export var dive_speed : float = 165
@@ -357,7 +359,8 @@ func perform_jump():
 	if is_wall_sliding:
 		if has_used_wall_jump:
 			if wall_normal.dot(last_wall_jump_normal) > 0.9:
-				return  # can't jump again from same wall
+				if same_wall_jump_count > max_same_wall_jumps:
+					return  # can't jump again from same wall
 				
 		velocity.y = wall_jump_vertical
 		
@@ -376,6 +379,11 @@ func perform_jump():
 		wall_jump_lock_timer = wall_jump_lock_duration
 		locked_air_direction = wall_jump_direction
 		
+		if wall_normal.dot(last_wall_jump_normal) > 0.9:
+			same_wall_jump_count += 1
+		else:
+			same_wall_jump_count = 1
+			
 		last_wall_jump_normal = wall_normal
 		has_used_wall_jump = true
 		
@@ -561,6 +569,10 @@ func check_wall_slide():
 				# ✅ ONLY trigger ON ENTRY
 				if !was_wall_sliding:
 					wall_bhop_timer = wall_bhop_window_frames
+					
+					# Detect if this is a different wall direction
+					if wall_normal.dot(last_wall_jump_normal) <= 0.9:
+						same_wall_jump_count = 0
 				
 				return
 
