@@ -390,13 +390,16 @@ func perform_jump():
 		last_wall_jump_normal = wall_normal
 		has_used_wall_jump = true
 		
-		if !wall_reset_consumed:
-			# First wall jump after reset → allow double jump
-			jumps_used = 1
-			wall_reset_consumed = true
-		else:
-			# Subsequent wall jumps → NO double jump
-			jumps_used = max_jumps
+		if has_used_wall_reset:
+			if !wall_reset_consumed:
+				# First wall jump after reset → allow double jump
+				if !did_double_jump:
+					jumps_used = 1
+					wall_reset_consumed = true
+			else:
+				# Subsequent wall jumps → NO double jump
+				if did_double_jump:
+					jumps_used = max_jumps
 		
 		is_wall_sliding = false
 		jump_hold_timer = 0.0
