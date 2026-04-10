@@ -104,7 +104,9 @@ var wall_bhop_timer : int = 0
 var wall_jump_velocity_x : float = 0.0
 var was_wall_sliding : bool = false
 var same_wall_jump_count : int = 0
-@export var max_same_wall_jumps : int = 2
+@export var max_same_wall_jumps : int = 3
+var has_used_wall_reset : bool = false
+var wall_reset_consumed : bool = false
 
 # Dive
 @export var dive_speed : float = 165
@@ -182,18 +184,19 @@ func _physics_process(delta):
 
 # ---- Player Mechanics ---- 
 func reset_on_player_touch_ground():
-	if is_on_floor() or is_wall_sliding:
+	if is_on_floor():
 		jumps_used = 0
 		did_double_jump = false
 		dashes_used = 0
 		locked_air_direction = 0
 		last_slide_jump_stacks = 0
+		has_used_wall_reset = false
 		
 		is_crouch_jump = false
-	
-	if is_on_floor():
+		
 		has_used_wall_jump = false
 		last_wall_jump_normal = Vector2.ZERO
+		same_wall_jump_count = 0
 
 func handle_player_in_air():
 	if !is_on_floor() or is_wall_sliding:
@@ -359,7 +362,7 @@ func perform_jump():
 	if is_wall_sliding:
 		if has_used_wall_jump:
 			if wall_normal.dot(last_wall_jump_normal) > 0.9:
-				if same_wall_jump_count > max_same_wall_jumps:
+				if same_wall_jump_count >= max_same_wall_jumps:
 					return  # can't jump again from same wall
 				
 		velocity.y = wall_jump_vertical
@@ -386,6 +389,14 @@ func perform_jump():
 			
 		last_wall_jump_normal = wall_normal
 		has_used_wall_jump = true
+		
+		if !wall_reset_consumed:
+			# First wall jump after reset → allow double jump
+			jumps_used = 1
+			wall_reset_consumed = true
+		else:
+			# Subsequent wall jumps → NO double jump
+			jumps_used = max_jumps
 		
 		is_wall_sliding = false
 		jump_hold_timer = 0.0
@@ -569,6 +580,13 @@ func check_wall_slide():
 				# ✅ ONLY trigger ON ENTRY
 				if !was_wall_sliding:
 					wall_bhop_timer = wall_bhop_window_frames
+					
+					# Reset ONLY once per air time
+					if !has_used_wall_reset:
+						jumps_used = 0
+						dashes_used = 0
+						has_used_wall_reset = true
+						wall_reset_consumed = false
 					
 					# Detect if this is a different wall direction
 					if wall_normal.dot(last_wall_jump_normal) <= 0.9:
