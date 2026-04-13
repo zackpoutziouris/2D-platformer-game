@@ -93,20 +93,22 @@ var landing_slide_consumed : bool = false
 @export var wall_jump_horizontal : float = 140
 @export var wall_jump_vertical : float = -260
 @export var wall_jump_lock_duration : float = 0.25
+@export var max_same_wall_jumps : int = 3
+@export var wall_bhop_window_frames : int = 10
 var wall_jump_lock_timer : float = 0.0
 var is_wall_sliding : bool = false
 var wall_normal : Vector2 = Vector2.ZERO
 var wall_jump_direction : int = 0
 var last_wall_jump_normal : Vector2 = Vector2.ZERO
 var has_used_wall_jump : bool = false
-@export var wall_bhop_window_frames : int = 10
 var wall_bhop_timer : int = 0
 var wall_jump_velocity_x : float = 0.0
 var was_wall_sliding : bool = false
 var same_wall_jump_count : int = 0
-@export var max_same_wall_jumps : int = 3
 var has_used_wall_reset : bool = false
 var wall_reset_consumed : bool = false
+var wall_slide_collision: KinematicCollision2D = null
+var wall_slide_normal: Vector2 = Vector2.ZERO
 
 # Dive
 @export var dive_speed : float = 165
@@ -124,6 +126,10 @@ var direction_switch_timer : float = 0.0
 @export var collision_stand : CollisionShape2D
 @export var collision_air : CollisionShape2D
 @export var collision_crouch : CollisionShape2D
+var physics_state : PhysicsDirectSpaceState2D = null
+var shape_query : PhysicsShapeQueryParameters2D = null
+var collisions : Array[Dictionary] = []
+var blocking_mask : int = 0
 
 # Drop down platforms
 @export var drop_through_duration : float = 0.05
@@ -139,8 +145,7 @@ func _input(event):
 func _physics_process(delta):
 	dash_timer_check(delta)
 	bhop_timer_check()
-	if wall_jump_lock_timer > 0:
-		wall_jump_lock_timer -= delta
+	wall_jump_lock_timer_check(delta)
 	landing_slide_input()
 	handle_landing()
 	ledge_fall_check()
@@ -214,26 +219,26 @@ func check_drop_down_platform_timer(delta):
 		set_collision_mask_value(10, true)
 
 func can_switch_to(shape: CollisionShape2D) -> bool:
-	var space_state = get_world_2d().direct_space_state
+	physics_state = get_world_2d().direct_space_state
+	shape_query = PhysicsShapeQueryParameters2D.new()
 	
-	var query = PhysicsShapeQueryParameters2D.new()
-	query.shape = shape.shape
-	query.transform = shape.global_transform
+	shape_query.shape = shape.shape
+	shape_query.transform = shape.global_transform
 	
 	# ignore the user and platforms the user can jump through depending on what mask layer the platform is on
-	query.collision_mask = get_blocking_mask()
-	query.exclude = [self]
+	shape_query.collision_mask = get_blocking_mask()
+	shape_query.exclude = [self]
 	
-	var result = space_state.intersect_shape(query)
-	return result.is_empty()
+	collisions = physics_state.intersect_shape(shape_query)
+	return collisions.is_empty()
 
 func get_blocking_mask() -> int:
-	var mask = collision_mask
+	blocking_mask = collision_mask
 	
 	# Remove one-way platform layer (layer 10)
-	mask &= ~(1 << 9)  # layer 10 = index 9
+	blocking_mask &= ~(1 << 9)  # layer 10 = index 9
 	
-	return mask
+	return blocking_mask
 
 func dive_input(event):
 	if event.is_action_pressed("move_down") and !is_on_floor():
@@ -250,6 +255,10 @@ func bhop_timer_check():
 		bhop_slide_buffer -= 1
 	if wall_bhop_timer > 0:
 		wall_bhop_timer -= 1
+
+func wall_jump_lock_timer_check(delta):
+	if wall_jump_lock_timer > 0:
+		wall_jump_lock_timer -= delta
 
 func handle_landing():
 	if is_on_floor() and !was_on_floor:
@@ -358,16 +367,14 @@ func gravity_and_variable_timed_jumps(delta):
 				velocity.y += gravity * delta
 
 func perform_jump():
-	# WALL JUMP TAKES PRIORITY
 	if is_wall_sliding:
 		if has_used_wall_jump:
 			if wall_normal.dot(last_wall_jump_normal) > 0.9:
 				if same_wall_jump_count >= max_same_wall_jumps:
-					return  # can't jump again from same wall
+					return
 				
 		velocity.y = wall_jump_vertical
 		
-		# push away from wall
 		facing *= -1
 		wall_jump_direction = sign(wall_normal.x)
 		wall_jump_velocity_x = wall_jump_direction * wall_jump_horizontal
@@ -392,12 +399,10 @@ func perform_jump():
 		
 		if has_used_wall_reset:
 			if !wall_reset_consumed:
-				# First wall jump after reset → allow double jump
 				if !did_double_jump:
 					jumps_used = 1
 					wall_reset_consumed = true
 			else:
-				# Subsequent wall jumps → NO double jump
 				if did_double_jump:
 					jumps_used = max_jumps
 		
@@ -554,10 +559,7 @@ func perform_landing_slide():
 	move_speed_current *= slide_boost_multiplier
 
 func check_wall_slide():
-	# store previous frame state
 	was_wall_sliding = is_wall_sliding
-	
-	# reset for this frame
 	is_wall_sliding = false
 	
 	if is_on_floor():
@@ -570,28 +572,23 @@ func check_wall_slide():
 		return
 	
 	for i in get_slide_collision_count():
-		var collision = get_slide_collision(i)
-		var normal = collision.get_normal()
+		wall_slide_collision = get_slide_collision(i)
+		wall_slide_normal = wall_slide_collision.get_normal()
 		
-		if abs(normal.x) > 0.7:
-			if sign(input_dir) == -sign(normal.x):
-				
-				# we are now sliding
+		if abs(wall_slide_normal.x) > 0.7:
+			if sign(input_dir) == -sign(wall_slide_normal.x):
 				is_wall_sliding = true
-				wall_normal = normal
+				wall_normal = wall_slide_normal
 				
-				# ✅ ONLY trigger ON ENTRY
 				if !was_wall_sliding:
 					wall_bhop_timer = wall_bhop_window_frames
 					
-					# Reset ONLY once per air time
 					if !has_used_wall_reset:
 						jumps_used = 0
 						dashes_used = 0
 						has_used_wall_reset = true
 						wall_reset_consumed = false
 					
-					# Detect if this is a different wall direction
 					if wall_normal.dot(last_wall_jump_normal) <= 0.9:
 						same_wall_jump_count = 0
 				
@@ -685,7 +682,6 @@ func handle_acceleration_air_ground(delta):
 
 func apply_horizontal_velocity():
 	if wall_jump_lock_timer > 0:
-		# KEEP momentum in jump direction
 		velocity.x = wall_jump_velocity_x
 		return
 	
