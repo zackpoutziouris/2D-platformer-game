@@ -131,6 +131,10 @@ var shape_query : PhysicsShapeQueryParameters2D = null
 var collisions : Array[Dictionary] = []
 var blocking_mask : int = 0
 
+# Wall slide cooldowns
+var jump_reset_available : bool = true
+var dash_reset_available : bool = true
+
 # Drop down platforms
 @export var drop_through_duration : float = 0.05
 var drop_through_timer : float = 0.0
@@ -202,6 +206,9 @@ func reset_on_player_touch_ground():
 		has_used_wall_jump = false
 		last_wall_jump_normal = Vector2.ZERO
 		same_wall_jump_count = 0
+		
+		jump_reset_available = true
+		dash_reset_available = true
 
 func handle_player_in_air():
 	if !is_on_floor() or is_wall_sliding:
@@ -589,7 +596,7 @@ func check_wall_slide():
 				if !was_wall_sliding:
 					wall_bhop_timer = wall_bhop_window_frames
 					
-					if !has_used_wall_reset:
+					if has_used_air_resources():
 						reset_cooldowns_wall_slide()
 					
 					if wall_normal.dot(last_wall_jump_normal) <= 0.9:
@@ -598,10 +605,17 @@ func check_wall_slide():
 				return
 
 func reset_cooldowns_wall_slide():
-	jumps_used = 0
-	dashes_used = 0
-	has_used_wall_reset = true
-	wall_reset_consumed = false
+	if jump_reset_available and jumps_used >= max_jumps:
+		jumps_used = 0
+		did_double_jump = false
+		jump_reset_available = false
+	
+	if dash_reset_available and dashes_used >= max_air_dashes:
+		dashes_used = 0
+		dash_reset_available = false
+
+func has_used_air_resources() -> bool:
+	return jumps_used >= max_jumps or dashes_used >= max_air_dashes
 
 func start_dive():
 	if is_on_floor():
