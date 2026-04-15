@@ -475,9 +475,15 @@ func update_crouch_jump_lock() -> bool:
 func start_dash():
 	is_dashing = true
 	dash_timer = dash_time
-	dash_direction = facing
+	if input_dir != 0:
+		dash_direction = input_dir
+	else:
+		dash_direction = facing
 	
 	dash_speed = dash_distance / dash_time
+	
+	wall_jump_lock_timer = 0
+	locked_air_direction = 0
 	
 	is_crouch_jump = false
 	jump_hold_timer = max_jump_hold_time
@@ -497,7 +503,7 @@ func finish_dash(delta):
 			dash_cooldown_timer = dash_cooldown
 			
 			move_speed_current = target_speed
-			locked_air_direction = dash_direction
+			locked_air_direction = 0
 		
 		return
 
@@ -584,15 +590,18 @@ func check_wall_slide():
 					wall_bhop_timer = wall_bhop_window_frames
 					
 					if !has_used_wall_reset:
-						jumps_used = 0
-						dashes_used = 0
-						has_used_wall_reset = true
-						wall_reset_consumed = false
+						reset_cooldowns_wall_slide()
 					
 					if wall_normal.dot(last_wall_jump_normal) <= 0.9:
 						same_wall_jump_count = 0
 				
 				return
+
+func reset_cooldowns_wall_slide():
+	jumps_used = 0
+	dashes_used = 0
+	has_used_wall_reset = true
+	wall_reset_consumed = false
 
 func start_dive():
 	if is_on_floor():
@@ -681,6 +690,9 @@ func handle_acceleration_air_ground(delta):
 			)
 
 func apply_horizontal_velocity():
+	if is_dashing:
+		return
+		
 	if wall_jump_lock_timer > 0:
 		velocity.x = wall_jump_velocity_x
 		return
