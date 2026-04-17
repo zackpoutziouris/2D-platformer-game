@@ -15,6 +15,8 @@ var jump_force : float = 0.0
 var base_speed : float = 1
 var move_speed_current : float = 0.0
 var air_control : float = 0.0
+var landing_momentum_x : float = 0.0
+var apply_landing_momentum : bool = false
 
 # Variable jump tuning
 @export var jump_hold_gravity_scale : float = 0.6
@@ -211,6 +213,8 @@ func reset_on_player_touch_ground():
 		dash_reset_available = true
 
 func handle_player_in_air():
+	if !is_on_floor() and abs(velocity.x) < 10 and input_dir == 0:
+		move_speed_current = 0 
 	if !is_on_floor() or is_wall_sliding:
 		is_sliding = false
 
@@ -270,6 +274,17 @@ func wall_jump_lock_timer_check(delta):
 func handle_landing():
 	if is_on_floor() and !was_on_floor:
 		bhop_window_timer = bhop_window_frames
+		
+		# --- NEW: capture clean landing momentum ---
+		var horizontal_speed = velocity.x
+		
+		# Conditions to ACCEPT momentum
+		if abs(horizontal_speed) > 20 and !was_wall_sliding:
+			landing_momentum_x = horizontal_speed
+			apply_landing_momentum = true
+		else:
+			landing_momentum_x = 0.0
+			apply_landing_momentum = false
 		
 		if wants_landing_slide and !is_sliding and abs(velocity.x) > 100:
 			if bhop_slide_buffer > 0:
@@ -712,6 +727,17 @@ func apply_horizontal_velocity():
 		return
 	
 	if is_on_floor():
+		# --- NEW: apply landing momentum ---
+		if apply_landing_momentum and input_dir == 0:
+			velocity.x = landing_momentum_x
+			
+			# decay it into your normal system
+			move_speed_current = abs(landing_momentum_x)
+			facing = sign(landing_momentum_x)
+			
+			apply_landing_momentum = false
+			return
+		
 		velocity.x = facing * move_speed_current
 	else:
 		if locked_air_direction != 0:
