@@ -143,6 +143,13 @@ var drop_through_timer : float = 0.0
 
 # Shotgun
 @export var shotgun_bullet_scene: PackedScene
+@export var max_shots: int = 2
+@export var ground_reload_cooldown: float = 0.5
+var shots_remaining: int = 2
+var reload_timer: float = 0.0
+var has_shot_in_air: bool = false
+var is_reloading: bool = false
+var shot_reset_available: bool = false
 
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -156,6 +163,7 @@ func _physics_process(delta):
 	dash_timer_check(delta)
 	bhop_timer_check()
 	wall_jump_lock_timer_check(delta)
+	update_shotgun(delta)
 	landing_slide_input()
 	handle_landing()
 	ledge_fall_check()
@@ -215,6 +223,12 @@ func reset_on_player_touch_ground():
 		
 		jump_reset_available = true
 		dash_reset_available = true
+		
+		if has_shot_in_air and shots_remaining == 0:
+			has_shot_in_air = false
+			is_reloading = true
+			reload_timer = 0.4
+			shot_reset_available = true
 
 func handle_player_in_air():
 	if !is_on_floor() and abs(velocity.x) < 10 and input_dir == 0:
@@ -632,6 +646,12 @@ func reset_cooldowns_wall_slide():
 	if dash_reset_available and dashes_used >= max_air_dashes:
 		dashes_used = 0
 		dash_reset_available = false
+	
+	if shot_reset_available and shots_remaining < max_shots:
+		shots_remaining = max_shots
+		shot_reset_available = false
+		is_reloading = false
+		reload_timer = 0.0
 
 func has_used_air_resources() -> bool:
 	return jumps_used >= max_jumps or dashes_used >= max_air_dashes
@@ -663,7 +683,27 @@ func finish_dive():
 
 func shoot_input(event):
 	if event.is_action_pressed("shoot"):
-		shoot()
+		try_shoot()
+
+func try_shoot():
+	if is_reloading:
+		return
+	
+	if shots_remaining <= 0:
+		return
+	
+	shoot()
+	shots_remaining -= 1
+	
+	if !is_on_floor():
+		has_shot_in_air = true
+
+	if shots_remaining == 0 and is_on_floor():
+		start_reload()
+
+func start_reload():
+	is_reloading = true
+	reload_timer = ground_reload_cooldown
 
 func shoot():
 	var projectile = shotgun_bullet_scene.instantiate()
@@ -675,6 +715,16 @@ func shoot():
 	projectile.direction = dir
 	
 	get_tree().current_scene.add_child(projectile)
+
+func update_shotgun(delta):
+	if !is_reloading:
+		return
+	
+	reload_timer -= delta
+	
+	if reload_timer <= 0:
+		is_reloading = false
+		shots_remaining = max_shots
 
 func handle_air_direction_penalty():
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
