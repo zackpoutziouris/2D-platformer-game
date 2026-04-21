@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://cxtioexqvj06a"]
+
+[ext_resource type="Script" uid="uid://b6arhbau0jau" path="res://Assets/Scripts/shotgun_bullet.gd" id="1_5ll0e"]
+[ext_resource type="Texture2D" uid="uid://doko4v84ckteu" path="res://Assets/Sprites/bullet.png" id="2_4lm0w"]
+
+[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1516867067]
+script = ExtResource("1_5ll0e")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1610805984]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1804274670]
+position = Vector2(1.75, -1.25)
+scale = Vector2(4.5, 3.5)
+texture = ExtResource("2_4lm0w")
+region_enabled = true
+region_rect = Rect2(0, 46, 1, 1)

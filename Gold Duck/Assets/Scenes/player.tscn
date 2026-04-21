@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://h1x6rl83s2oc" path="res://Assets/Scripts/player_controller.gd" id="1_7dd06"]
 [ext_resource type="Script" uid="uid://besv2adgg1gbd" path="res://Assets/Scripts/player_animator.gd" id="2_38rej"]
+[ext_resource type="PackedScene" uid="uid://cxtioexqvj06a" path="res://Assets/Scenes/Guns/shotgun_bullet.tscn" id="2_t1xgp"]
 [ext_resource type="Texture2D" uid="uid://c17mu2rwerg6s" path="res://Assets/Sprites/goldey-Sheet.png" id="3_38rej"]
 
 [sub_resource type="Animation" id="Animation_7dd06"]
@@ -291,6 +292,7 @@ camera = NodePath("Camera2D")
 collision_stand = NodePath("CollisionStand")
 collision_air = NodePath("CollisionAir")
 collision_crouch = NodePath("CollisionCrouch")
+shotgun_bullet_scene = ExtResource("2_t1xgp")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=673301599]
 zoom = Vector2(4.75, 4.75)

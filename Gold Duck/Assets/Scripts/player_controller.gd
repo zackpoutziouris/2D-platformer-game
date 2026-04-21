@@ -141,12 +141,16 @@ var dash_reset_available : bool = true
 @export var drop_through_duration : float = 0.05
 var drop_through_timer : float = 0.0
 
+# Shotgun
+@export var shotgun_bullet_scene: PackedScene
+
 # Get the gravity from the project settings to be synced with RigidBody nodes
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func _input(event):
 	move_down_platform_input_and_action(event)
 	dive_input(event)
+	shoot_input(event)
 
 func _physics_process(delta):
 	dash_timer_check(delta)
@@ -656,6 +660,21 @@ func finish_dive():
 			is_diving = false
 			
 		return
+
+func shoot_input(event):
+	if event.is_action_pressed("shoot"):
+		shoot()
+
+func shoot():
+	var projectile = shotgun_bullet_scene.instantiate()
+	
+	var mouse_pos = get_global_mouse_position()
+	var dir = (mouse_pos - global_position).normalized()
+	
+	projectile.global_position = global_position
+	projectile.direction = dir
+	
+	get_tree().current_scene.add_child(projectile)
 
 func handle_air_direction_penalty():
 	if !is_on_floor() and input_dir != 0 and input_dir != previous_facing:
